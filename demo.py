@@ -25,7 +25,7 @@ run = wandb.init(
         "warmup_steps": 1000,
         "batch_size": 4,
         "grad_accum_every": 1,
-        "checkpoint_every": 10,
+        "checkpoint_every": 20,
         "device": str(device),
         "autoencoder": {
             "dim": 512,
