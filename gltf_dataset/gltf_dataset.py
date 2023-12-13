@@ -8,6 +8,7 @@ import sys
 import functools
 import wandb
 
+wandb.init()
 
 class GLTFMeshDataset(Dataset):
     def __init__(self, folder_path, use_wandb_tracking = False):
@@ -53,11 +54,16 @@ class GLTFMeshDataset(Dataset):
 
         return 0
 
+    def filter_files(self):
+        filtered_list = [file for file in self.file_list if file.endswith(('.glb', '.gltf'))]
+        return filtered_list
+
     def __len__(self):
-        return len(self.file_list)
+        return len(self.filter_files())
 
     def __getitem__(self, idx):
-        file_path = os.path.join(self.folder_path, self.file_list[idx])
+        files = self.filter_files()
+        file_path = os.path.join(self.folder_path, files[idx])
         scene = trimesh.load(file_path, force="Scene")
         vertex_indices = {}
 
@@ -154,31 +160,18 @@ class GLTFMeshDataset(Dataset):
 if __name__ == "__main__":
     dataset = GLTFMeshDataset("unit_test")
 
-    mesh_00 = dataset.__getitem__(0)
-    with open("mesh_00.json", "wb") as f:
+    mesh_00 = [tensor.tolist() for tensor in dataset.__getitem__(0)]
+    with open("unit_test/mesh_00.json", "wb") as f:
         f.write(json.dumps(mesh_00).encode())
 
-    mesh_01 = dataset.__getitem__(1)
-    with open("mesh_01.json", "wb") as f:
+    dataset.convert_to_glb(mesh_00, "unit_test/box_test_01.glb")
+
+    mesh_01 = [tensor.tolist() for tensor in dataset.__getitem__(1)]
+
+    with open("unit_test/mesh_01.json", "wb") as f:
         f.write(json.dumps(mesh_01).encode())
 
     if GLTFMeshDataset.compare_json(mesh_00, mesh_01):
         print("JSON data 00 and 01 are the same.")
     else:
         print("JSON data 00 and 01 are different.")
-
-    dataset.convert_to_glb(mesh_00, "unit_test/box_test_02.glb")
-    dataset.convert_to_glb(mesh_01, "unit_test/box_test_03.glb")
-
-    mesh_02 = dataset.__getitem__(2)
-    with open("mesh_02.json", "wb") as f:
-        f.write(json.dumps(mesh_02).encode())
-
-    mesh_03 = dataset.__getitem__(3)
-    with open("mesh_03.json", "wb") as f:
-        f.write(json.dumps(mesh_03).encode())
-
-    if GLTFMeshDataset.compare_json(mesh_02, mesh_03):
-        print("JSON data 02 and 03 are the same.")
-    else:
-        print("JSON data 02 and 03 are different.")
