@@ -68,10 +68,10 @@ class MeshDataset(Dataset):
         if len(json_data1) != len(json_data2):
             return False
 
-        if not np.array_equal(json_data1[0], json_data1[0]):
+        if not np.array_equal(json_data1[0], json_data2[0]):
             return False
 
-        if not np.array_equal(json_data2[1], json_data2[1]):
+        if not np.array_equal(json_data1[1], json_data2[1]):
             return False
 
         return True
