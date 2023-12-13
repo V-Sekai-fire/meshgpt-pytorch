@@ -333,14 +333,14 @@ class MeshAutoencoderTrainer(Module):
             step += 1
             self.step.add_(1)
 
-        self.print('Training complete')
-         # Plot the training loss after all epochs
-        plt.figure(figsize=(10, 5))
-        plt.plot(range(1, num_epochs + 1), epoch_losses, marker='o')
-        plt.title('Training Loss Over Epochs')
-        plt.xlabel('Epoch')
-        plt.ylabel('Average Loss')
-        plt.grid(True)
+            self.print('Training complete')
+            # Plot the training loss after all epochs
+            plt.figure(figsize=(10, 5))
+            plt.plot(range(1, num_epochs + 1), epoch_losses, marker='o')
+            plt.title('Training Loss Over Epochs')
+            plt.xlabel('Epoch')
+            plt.ylabel('Average Loss')
+            plt.grid(True)
 
             if self.is_main:
                 self.ema_model.update()
@@ -584,3 +584,11 @@ class MeshTransformerTrainer(Module):
             self.wait()
 
         self.print('training complete')
+         # Plot the training loss after all epochs
+        plt.figure(figsize=(10, 5))
+        plt.plot(range(1, num_epochs + 1), epoch_losses, marker='o')
+        plt.title('Training Loss Over Epochs')
+        plt.xlabel('Epoch')
+        plt.ylabel('Average Loss')
+        plt.grid(True)
+        plt.show()
