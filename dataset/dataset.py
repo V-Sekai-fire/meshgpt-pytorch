@@ -34,6 +34,13 @@ class MeshDataset(Dataset):
             )
             if vertex_comparison != 0:
                 return vertex_comparison
+                
+        for i in range(3):
+            if face_a[i] < face_b[i]:
+                return -1
+            elif face_a[i] > face_b[i]:
+                return 1
+
         return 0
 
     def filter_files(self):
