@@ -17,7 +17,7 @@ run = wandb.init(
     project="meshgpt-pytorch",
     
     config={
-        "learning_rate": 0.01,
+        "learning_rate": 0.001,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
         "num_train_steps": 100,
