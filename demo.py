@@ -59,7 +59,7 @@ if True:
         use_wandb_tracking = True,
     )
 
-    trainer.train(10)
+    trainer.train(20)
 
     from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
 
@@ -81,7 +81,7 @@ if True:
         use_wandb_tracking=True,
     )
 
-    transformer_trainer.train(5)
+    transformer_trainer.train(10)
 
     continuous_coors  = transformer.generate()
 

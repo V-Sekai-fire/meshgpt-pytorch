@@ -529,3 +529,4 @@ class MeshTransformerTrainer(Module):
         plt.xlabel('Epoch')
         plt.ylabel('Average Loss')
         plt.grid(True)
+        plt.show()
