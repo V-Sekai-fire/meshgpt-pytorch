@@ -335,8 +335,6 @@ class MeshAutoencoderTrainer(Module):
             step += 1
             self.step.add_(1)
 
-            self.print('Training complete')
-
             if self.is_main:
                 self.ema_model.update()
 
@@ -579,4 +577,3 @@ class MeshTransformerTrainer(Module):
             self.wait()
 
         self.print('training complete')
-        
