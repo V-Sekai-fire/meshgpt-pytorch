@@ -17,7 +17,7 @@ run = wandb.init(
     project="meshgpt-pytorch",
     
     config={
-        "learning_rate": 0.001,
+        "learning_rate": 0.01,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
         "num_train_steps": 100,
@@ -62,7 +62,7 @@ from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
 transformer = MeshTransformer(
     autoencoder,
     dim=512,
-    max_seq_len=768
+    max_seq_len=6000
 ).to(device)
 
 transformer_trainer = MeshTransformerTrainer(
