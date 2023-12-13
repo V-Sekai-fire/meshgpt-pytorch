@@ -5,11 +5,11 @@ from meshgpt_pytorch import (
     MeshAutoencoderTrainer,
 )
 
-from gltf_dataset.gltf_dataset import MeshDataset 
+from dataset.dataset import MeshDataset 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-dataset_directory = "gltf_dataset/blockmesh_test/blockmesh"
+dataset_directory = "dataset/blockmesh_test/blockmesh"
 
 dataset = MeshDataset(dataset_directory)
 

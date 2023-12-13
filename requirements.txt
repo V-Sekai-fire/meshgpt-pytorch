@@ -7,7 +7,8 @@ pytorch-warmup
 torch>=2.0
 torch_geometric
 torchtyping
-vector-quantize-pytorch>=1.12.0
 x-transformers>=1.26.0
 tqdm
 trimesh
+vector-quantize-pytorch>=1.12.0
+gateloop-transformer>=0.1.1
