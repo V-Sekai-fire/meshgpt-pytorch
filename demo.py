@@ -21,7 +21,7 @@ run = wandb.init(
         "learning_rate": 0.002,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
-        "num_train_steps": 40,
+        "num_train_steps": 80,
         "warmup_steps": 1,
         "batch_size": 1,
         "grad_accum_every": 1,
