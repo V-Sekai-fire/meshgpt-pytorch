@@ -21,7 +21,7 @@ run = wandb.init(
         "learning_rate": 0.002,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
-        "num_train_steps": 10,
+        "num_train_steps": 40,
         "warmup_steps": 1,
         "batch_size": 1,
         "grad_accum_every": 1,
@@ -96,10 +96,10 @@ with open('continuous_coors.json', 'w') as f:
 flat_list = [item for sublist in continuous_coors_list for item in sublist]
 
 vertices = [vertex for sublist in flat_list for vertex in sublist]
-print("Vertices:", vertices)
+# print("Vertices:", vertices)
 
 faces = [[i+2, i+1, i] for i in range(0, len(vertices), 3)]
-print("Faces:", faces)
+# print("Faces:", faces)
 
 # Assuming dataset is an instance of a class that has a method convert_to_glb
 dataset.convert_to_glb((vertices, faces), "output.glb")
