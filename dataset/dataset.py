@@ -34,7 +34,7 @@ class MeshDataset(Dataset):
             )
             if vertex_comparison != 0:
                 return vertex_comparison
-                
+
         for i in range(3):
             if face_a[i] < face_b[i]:
                 return -1
@@ -119,37 +119,14 @@ class MeshDataset(Dataset):
             min(vertex[i] for vertex in scaled_vertices) for i in range(3)
         ]
 
-        # Calculate the centroid of the object
-        centroid = [
-            sum(vertex[i] for vertex in scaled_vertices) / len(scaled_vertices)
-            for i in range(3)
-        ]
-
-        # Translate the vertices so that the centroid is at the origin
-        translated_vertices = [
-            [v[i] - centroid[i] for i in range(3)] for v in scaled_vertices
-        ]
-
-        # Generate a random rotation matrix
-        rotation = R.from_euler("y", random.uniform(-180, 180), degrees=True)
-
-        # Apply the transformations to each vertex of the object
-        new_vertices = [
-            (np.dot(rotation.as_matrix(), np.array(v))).tolist()
-            for v in translated_vertices
-        ]
-
-        # Translate the vertices back so that the centroid is at its original position
-        final_vertices = [[v[i] + centroid[i] for i in range(3)] for v in new_vertices]
-
         # Get the new lowest point of the object in y dimension
-        new_lowest_y = min(vertex[1] for vertex in final_vertices)
+        new_lowest_y = min(vertex[1] for vertex in scaled_vertices)
 
         # Calculate the difference between the original and new lowest y
         y_diff = original_lowest_point[1] - new_lowest_y
 
         # Translate the vertices so that the new lowest point is at the same y as the original lowest point
-        final_vertices = [[v[0], v[1] + y_diff, v[2]] for v in final_vertices]
+        final_vertices = [[v[0], v[1] + y_diff, v[2]] for v in scaled_vertices]
 
         return (
             torch.tensor(final_vertices, dtype=torch.float),
@@ -237,9 +214,9 @@ if __name__ == "__main__":
     with open("unit_test/mesh_00.json", "wb") as f:
         f.write(json.dumps(mesh_00).encode())
 
-    # for i in range(1, 10):
-    #     mesh = [tensor.tolist() for tensor in dataset.__getitem__(i)]
-    #     dataset.convert_to_glb(mesh, f"unit_test/mesh_{str(i).zfill(2)}.glb")
+    for i in range(1, 10):
+        mesh = [tensor.tolist() for tensor in dataset.__getitem__(i)]
+        dataset.convert_to_glb(mesh, f"unit_test/mesh_{str(i).zfill(2)}.glb")
 
     for i in range(1, 2):
         mesh = [tensor.tolist() for tensor in dataset.__getitem__(i)]
