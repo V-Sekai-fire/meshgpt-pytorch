@@ -38,26 +38,42 @@ run = wandb.init(
 )
 
 if True:
-    autoencoder = MeshAutoencoder(
-        dim = run.config.autoencoder["dim"],
-        encoder_depth = run.config.autoencoder["encoder_depth"],
-        decoder_depth = run.config.autoencoder["decoder_depth"],
-        num_discrete_coors = run.config.autoencoder["num_discrete_coors"]
-    ).to(device)
+    load_from_checkpoint = True
+    checkpoint_path = 'checkpoints/mesh-autoencoder.ckpt.40.pt'
+    autoencoder = None
+    if load_from_checkpoint and os.path.isfile(checkpoint_path):
+        # Initialize the autoencoder first
+        autoencoder = MeshAutoencoder(
+            dim = run.config.autoencoder["dim"],
+            encoder_depth = run.config.autoencoder["encoder_depth"],
+            decoder_depth = run.config.autoencoder["decoder_depth"],
+            num_discrete_coors = run.config.autoencoder["num_discrete_coors"]
+        ).to(device)
+        
+        # Load the state dict of the autoencoder from the checkpoint file
+        checkpoint = torch.load(checkpoint_path)
+        autoencoder.load_state_dict(checkpoint['model_state_dict'])
+        print(f"Loaded checkpoint '{checkpoint_path}'")
+    else:
+        autoencoder = MeshAutoencoder(
+            dim = run.config.autoencoder["dim"],
+            encoder_depth = run.config.autoencoder["encoder_depth"],
+            decoder_depth = run.config.autoencoder["decoder_depth"],
+            num_discrete_coors = run.config.autoencoder["num_discrete_coors"]
+        ).to(device)
 
-    trainer = MeshAutoencoderTrainer(
-        autoencoder,
-        dataset = dataset,
-        batch_size = wandb.config.batch_size,
-        grad_accum_every = wandb.config.grad_accum_every,
-        num_train_steps = wandb.config.num_train_steps,
-        checkpoint_every = wandb.config.checkpoint_every,
-        warmup_steps = wandb.config.warmup_steps,
-        learning_rate = wandb.config.learning_rate,
-        use_wandb_tracking = True,
-    )
-
-    trainer()
+        trainer = MeshAutoencoderTrainer(
+            autoencoder,
+            dataset = dataset,
+            batch_size = wandb.config.batch_size,
+            grad_accum_every = wandb.config.grad_accum_every,
+            num_train_steps = wandb.config.num_train_steps,
+            checkpoint_every = wandb.config.checkpoint_every,
+            warmup_steps = wandb.config.warmup_steps,
+            learning_rate = wandb.config.learning_rate,
+            use_wandb_tracking = True,
+        )
+        trainer()
 
     from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
 
