@@ -319,7 +319,6 @@ class MeshAutoencoderTrainer(Module):
         plt.xlabel('Epoch')
         plt.ylabel('Average Loss')
         plt.grid(True)
-        # plt.show()
 
 
 class MeshTransformerTrainer(Module):
@@ -530,4 +529,3 @@ class MeshTransformerTrainer(Module):
         plt.xlabel('Epoch')
         plt.ylabel('Average Loss')
         plt.grid(True)
-        plt.show()
