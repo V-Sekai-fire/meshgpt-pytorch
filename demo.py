@@ -1,4 +1,4 @@
-import torch, wandb
+import torch, wandb, os
 import numpy as np
 
 from meshgpt_pytorch import (
@@ -21,8 +21,8 @@ run = wandb.init(
         "learning_rate": 1e-2,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
-        "num_train_steps": 2000,
-        "warmup_steps": 1000,
+        "num_train_steps": 200,
+        "warmup_steps": 1,
         "batch_size": 4,
         "grad_accum_every": 1,
         "checkpoint_every": 20,
@@ -39,20 +39,16 @@ run = wandb.init(
 
 if True:
     load_from_checkpoint = False
-    checkpoint_path = 'checkpoints/mesh-autoencoder.ckpt.72.pt'
+    checkpoint_path = 'checkpoints/mesh-autoencoder.ckpt.1.pt'
     autoencoder = None
     if load_from_checkpoint and os.path.isfile(checkpoint_path):
-        # Initialize the autoencoder first
         autoencoder = MeshAutoencoder(
             dim = run.config.autoencoder["dim"],
             encoder_depth = run.config.autoencoder["encoder_depth"],
             decoder_depth = run.config.autoencoder["decoder_depth"],
             num_discrete_coors = run.config.autoencoder["num_discrete_coors"]
         ).to(device)
-        
-        # Load the state dict of the autoencoder from the checkpoint file
-        checkpoint = torch.load(checkpoint_path)
-        autoencoder.load_state_dict(checkpoint['model_state_dict'])
+        autoencoder.init_and_load_from(checkpoint_path)
         print(f"Loaded checkpoint '{checkpoint_path}'")
     else:
         autoencoder = MeshAutoencoder(
