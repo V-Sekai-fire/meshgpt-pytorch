@@ -17,10 +17,10 @@ run = wandb.init(
     project="meshgpt-pytorch",
     
     config={
-        "learning_rate": 0.001,
+        "learning_rate": 0.002,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
-        "num_train_steps": 100,
+        "num_train_steps": 1,
         "warmup_steps": 1,
         "batch_size": 1,
         "grad_accum_every": 1,
@@ -79,6 +79,9 @@ transformer_trainer = MeshTransformerTrainer(
 
 transformer_trainer()
 
-faces_coordinates = transformer.generate()
+continuous_coors, pred_face_coords  = transformer.generate()
 
-dataset.convert_to_glb(faces_coordinates, "output.glb")
+vertices = continuous_coors.cpu().numpy()
+faces = pred_face_coords.cpu().numpy()
+
+dataset.convert_to_glb((vertices, faces), "output.glb")
