@@ -98,8 +98,7 @@ flat_list = [item for sublist in continuous_coors_list for item in sublist]
 vertices = [vertex for sublist in flat_list for vertex in sublist]
 # print("Vertices:", vertices)
 
-faces = [[i+2, i+1, i] for i in range(0, len(vertices), 3)]
-# print("Faces:", faces)
+faces = [[i, i+1, i+2] for i in range(0, len(vertices), 3)]
 
 # Assuming dataset is an instance of a class that has a method convert_to_glb
 dataset.convert_to_glb((vertices, faces), "output.glb")
