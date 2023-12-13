@@ -10,7 +10,7 @@ from dataset.dataset import MeshDataset
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-dataset_directory = "dataset/unit_test"
+dataset_directory = "dataset/blockmesh_test/blockmesh"
 
 dataset = MeshDataset(dataset_directory)
 
@@ -21,10 +21,10 @@ run = wandb.init(
         "learning_rate": 1e-2,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
-        "num_train_steps": 800,
+        "num_train_steps": 2000,
         "num_transformer_train_steps": 100,
         "warmup_steps": 1,
-        "batch_size": 4,
+        "batch_size": 8,
         "grad_accum_every": 1,
         "checkpoint_every": 20,
         "device": str(device),
@@ -39,7 +39,7 @@ run = wandb.init(
 )
 
 if True:
-    load_from_checkpoint = True
+    load_from_checkpoint = False
     checkpoint_path = 'checkpoints/mesh-autoencoder.ckpt.20.pt'
     autoencoder = None
     if load_from_checkpoint and os.path.isfile(checkpoint_path):
