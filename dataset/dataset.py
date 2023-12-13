@@ -13,6 +13,7 @@ import os
 import random
 from scipy.spatial.transform import Rotation as R
 
+
 class MeshDataset(Dataset):
     def __init__(self, folder_path):
         self.folder_path = folder_path
@@ -37,9 +38,7 @@ class MeshDataset(Dataset):
 
     def filter_files(self):
         filtered_list = [
-            file
-            for file in self.file_list
-            if file.endswith(self.supported_formats)
+            file for file in self.file_list if file.endswith(self.supported_formats)
         ]
         return filtered_list
 
@@ -90,9 +89,7 @@ class MeshDataset(Dataset):
 
     def filter_files(self):
         filtered_list = [
-            file
-            for file in self.file_list
-            if file.endswith(self.supported_formats)
+            file for file in self.file_list if file.endswith(self.supported_formats)
         ]
         return filtered_list
 
@@ -126,11 +123,11 @@ class MeshDataset(Dataset):
             vertices = geometry.vertices
             vertices = [tuple(v) for v in vertices]
             vertex_indices.update({v: i for i, v in enumerate(vertices)})
-            
+
             geometry.vertices = np.array(vertices)
-            
+
             offset = len(all_vertices)
-            
+
             faces = [
                 [
                     vertex_indices[tuple(geometry.vertices[vertex])] + offset
@@ -138,7 +135,7 @@ class MeshDataset(Dataset):
                 ]
                 for face in geometry.faces
             ]
-          
+
             faces = [[vertex for vertex in face] for face in faces]
 
             all_faces.extend(faces)
@@ -168,32 +165,44 @@ class MeshDataset(Dataset):
         random.seed(self.seed + idx * self.augments_per_item + idx)
 
         # Generate a random scale factor
-        scale = random.uniform(0.8, 1.2)  
+        scale = random.uniform(0.8, 1.2)
 
-       # Get the original lowest point of the object in all dimensions
-        original_lowest_point = [min(vertex[1] for vertex in new_vertices) for i in range(3)]
+        # Get the original lowest point of the object in all dimensions
+        original_lowest_point = [
+            min(vertex[1] for vertex in new_vertices) for i in range(3)
+        ]
 
-        # Translate the vertices so that the lowest point is at the origin
-        translated_vertices = [[v[i] - original_lowest_point[i] for i in range(3)] for v in new_vertices]
+        # Calculate the centroid of the object
+        centroid = [
+            sum(vertex[i] for vertex in new_vertices) / len(new_vertices)
+            for i in range(3)
+        ]
+
+        # Translate the vertices so that the centroid is at the origin
+        translated_vertices = [
+            [v[i] - centroid[i] for i in range(3)] for v in new_vertices
+        ]
 
         # Generate a random rotation matrix
-        rotation = R.from_euler('y', random.uniform(-180, 180), degrees=True)  
-
-        # Generate a random translation vector in the x and z directions
-        translation = np.array([random.uniform(-0.5, 0.5) for _ in [0, 2]])  
-        translation = np.append(translation, 0)
+        rotation = R.from_euler("y", random.uniform(-180, 180), degrees=True)
 
         # Apply the transformations to each vertex of the object
-        new_vertices = [(np.dot(rotation.as_matrix(), np.array(v)*scale) + translation).tolist() for v in translated_vertices]
+        new_vertices = [
+            (np.dot(rotation.as_matrix(), np.array(v) * scale)).tolist()
+            for v in translated_vertices
+        ]
+
+        # Translate the vertices back so that the centroid is at its original position
+        final_vertices = [[v[i] + centroid[i] for i in range(3)] for v in new_vertices]
 
         # Get the new lowest point of the object in y dimension
-        new_lowest_y = min(vertex[1] for vertex in new_vertices)
+        new_lowest_y = min(vertex[1] for vertex in final_vertices)
 
         # Calculate the difference between the original and new lowest y
         y_diff = original_lowest_point[1] - new_lowest_y
 
         # Translate the vertices so that the new lowest point is at the same y as the original lowest point
-        final_vertices = [[v[0], v[1] + y_diff, v[2]] for v in new_vertices]
+        final_vertices = [[v[0], v[1] + y_diff, v[2]] for v in final_vertices]
 
         return (
             torch.tensor(final_vertices, dtype=torch.float),
@@ -202,7 +211,6 @@ class MeshDataset(Dataset):
 
 
 if __name__ == "__main__":
-
     dataset = MeshDataset("unit_test")
 
     mesh_00 = [tensor.tolist() for tensor in dataset.__getitem__(0)]
