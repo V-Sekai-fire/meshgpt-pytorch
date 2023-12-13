@@ -16,6 +16,7 @@ class MeshDataset(Dataset):
     def __init__(self, folder_path):
         self.folder_path = folder_path
         self.file_list = os.listdir(folder_path)
+        self.supported_formats = (".glb", ".gltf")
 
     @staticmethod
     def compare_faces(face_a, face_b, vertices):
@@ -35,7 +36,7 @@ class MeshDataset(Dataset):
         filtered_list = [
             file
             for file in self.file_list
-            if file.endswith((".glb", ".gltf", ".ply", ".obj", ".stl"))
+            if file.endswith(self.supported_formats)
         ]
         return filtered_list
 
@@ -91,41 +92,12 @@ class MeshDataset(Dataset):
         filtered_list = [
             file
             for file in self.file_list
-            if file.endswith((".glb", ".gltf", ".ply", ".obj", ".stl"))
+            if file.endswith(self.supported_formats)
         ]
         return filtered_list
 
     def __len__(self):
         return len(self.filter_files())
-
-    def transform_axis_order(self, data, src_format, dest_format):
-        axis_orders_to_gltf = {
-            ".ply": [2, 1, 0],  # Assuming Y-Z-X
-            ".stl": [0, 2, 1],  # Assuming X-Z-Y
-            ".obj": [0, 2, 1],  # X-Y-Z
-            ".glb": [0, 1, 2],  # X-Y-Z
-            ".gltf": [0, 1, 2],  # X-Y-Z
-        }
-        src_order = axis_orders_to_gltf[src_format]
-
-        return [data[i] for i in src_order]
-
-    def convert_to_dest_axis(self, source_extension, vertex_position):
-        forward_axis_conversion = {
-            ".ply": 1,
-            ".stl": -1,
-            ".obj": 1,
-            ".glb": 1,
-            ".gltf": 1,
-        }
-
-        # Transform the axis order from source to destination
-        dest_converted_vertex_position = self.transform_axis_order(np.array(vertex_position), source_extension, ".gltf")
-        
-        # Perform the operation on both lists
-        dest_converted_vertex_position[2] *= forward_axis_conversion[source_extension]
-
-        return dest_converted_vertex_position
 
     def __getitem__(self, idx):
         files = self.filter_files()
@@ -146,10 +118,7 @@ class MeshDataset(Dataset):
             except Exception as e:
                 pass
 
-            vertices = []
-            for vertex in geometry.vertices:
-                converted_vertex = self.convert_to_dest_axis(file_extension, vertex)
-                vertices.append(converted_vertex)
+            vertices = geometry.vertices
             vertices = [tuple(v) for v in vertices]
             vertex_indices.update({v: i for i, v in enumerate(vertices)})
             
@@ -165,19 +134,6 @@ class MeshDataset(Dataset):
                 for face in geometry.faces
             ]
           
-            # Calculate the normal of the first face
-            v1 = np.array(vertices[1]) - np.array(vertices[0])
-            v2 = np.array(vertices[2]) - np.array(vertices[0])
-            normal = np.cross(v1, v2)
-
-            # If the z-coordinate of the normal is positive, the winding order is CCW
-            # Otherwise, it's CW
-            if normal[2] > 0:
-                print("Clockwise")
-                faces = [face[::-1] for face in faces]
-            else:
-                print("Counter-clockwise")
-            
             faces = [[vertex for vertex in face] for face in faces]
 
             all_faces.extend(faces)
@@ -208,34 +164,6 @@ class MeshDataset(Dataset):
             torch.tensor(new_faces, dtype=torch.long),
         )
 
-import unittest
-
-class TestMain(unittest.TestCase):
-
-    def setUp(self):
-        self.main = MeshDataset("unit_test")  # Assuming the class name is Main
-
-    def test_convert_to_dest_axis(self):
-        # Test case for .ply extension
-        result = self.main.convert_to_dest_axis(".ply", [1, 2, 3])
-        self.assertEqual(result, [3, 2, 1])
-
-        # Test case for .stl extension
-        result = self.main.convert_to_dest_axis(".stl", [1, 2, 3])
-        self.assertEqual(result, [1, 3, -2])
-
-        # Test case for .obj extension
-        result = self.main.convert_to_dest_axis(".obj", [1, 2, 3])
-        self.assertEqual(result, [1, 3, 2])
-
-        # Test case for .glb extension
-        result = self.main.convert_to_dest_axis(".glb", [1, 2, 3])
-        self.assertEqual(result, [1, 2, 3])
-
-        # Test case for .gltf extension
-        result = self.main.convert_to_dest_axis(".gltf", [1, 2, 3])
-        self.assertEqual(result, [1, 2, 3])
-
 if __name__ == "__main__":
 
     dataset = MeshDataset("unit_test")
@@ -247,7 +175,7 @@ if __name__ == "__main__":
 
     dataset.convert_to_glb(mesh_00, "unit_test/box_test_01.glb")
 
-    for i in range(1, 5):
+    for i in range(1, 2):
         mesh = [tensor.tolist() for tensor in dataset.__getitem__(i)]
 
         with open(f"unit_test/mesh_{str(i).zfill(2)}.json", "wb") as f:
@@ -257,4 +185,3 @@ if __name__ == "__main__":
             print(f"JSON data 00 and {str(i).zfill(2)} are the same.")
         else:
             print(f"JSON data 00 and {str(i).zfill(2)} are different.")
-    unittest.main()
