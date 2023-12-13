@@ -1,4 +1,5 @@
 import torch, wandb
+import numpy as np
 
 from meshgpt_pytorch import (
     MeshAutoencoder,
@@ -20,7 +21,7 @@ run = wandb.init(
         "learning_rate": 0.002,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
-        "num_train_steps": 100,
+        "num_train_steps": 1,
         "warmup_steps": 1,
         "batch_size": 1,
         "grad_accum_every": 1,
@@ -62,7 +63,7 @@ from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
 transformer = MeshTransformer(
     autoencoder,
     dim=512,
-    max_seq_len=6000
+    max_seq_len=768
 ).to(device)
 
 transformer_trainer = MeshTransformerTrainer(
@@ -79,9 +80,22 @@ transformer_trainer = MeshTransformerTrainer(
 
 transformer_trainer()
 
-continuous_coors, pred_face_coords  = transformer.generate()
+continuous_coors  = transformer.generate()
+import json
 
-vertices = continuous_coors.cpu().numpy()
-faces = pred_face_coords.cpu().numpy()
+with open('continuous_coors.json', 'w') as f:
+    json.dump(continuous_coors.tolist(), f)
 
+# with open('continuous_coors.json', 'r') as f:
+#     continuous_coors = json.load(f)
+
+flat_list = [item for sublist in continuous_coors for item in sublist]
+
+vertices = [vertex for sublist in flat_list for vertex in sublist]
+print("Vertices:", vertices)
+
+faces = [[i, i+1, i+2] for i in range(0, len(vertices), 3)]
+print("Faces:", faces)
+
+# Assuming dataset is an instance of a class that has a method convert_to_glb
 dataset.convert_to_glb((vertices, faces), "output.glb")
