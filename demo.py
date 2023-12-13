@@ -21,7 +21,8 @@ run = wandb.init(
         "learning_rate": 1e-2,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
-        "num_train_steps": 400,
+        "num_train_steps": 800,
+        "num_transformer_train_steps": 100,
         "warmup_steps": 1,
         "batch_size": 4,
         "grad_accum_every": 1,
@@ -38,7 +39,7 @@ run = wandb.init(
 )
 
 if True:
-    load_from_checkpoint = False
+    load_from_checkpoint = True
     checkpoint_path = 'checkpoints/mesh-autoencoder.ckpt.20.pt'
     autoencoder = None
     if load_from_checkpoint and os.path.isfile(checkpoint_path):
@@ -63,7 +64,7 @@ if True:
             dataset = dataset,
             batch_size = wandb.config.batch_size,
             grad_accum_every = wandb.config.grad_accum_every,
-            num_train_steps = wandb.config.num_train_steps,
+            num_train_steps = wandb.config.num_transformer_train_steps,
             checkpoint_every = wandb.config.checkpoint_every,
             warmup_steps = wandb.config.warmup_steps,
             learning_rate = wandb.config.learning_rate,
