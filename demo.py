@@ -21,7 +21,7 @@ run = wandb.init(
         "learning_rate": 1e-2,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
-        "num_train_steps": 200,
+        "num_train_steps": 400,
         "warmup_steps": 1,
         "batch_size": 4,
         "grad_accum_every": 1,
@@ -76,7 +76,7 @@ if True:
     transformer = MeshTransformer(
         autoencoder,
         dim=512,
-        max_seq_len=768
+        max_seq_len=512,
     ).to(device)
 
     transformer_trainer = MeshTransformerTrainer(
