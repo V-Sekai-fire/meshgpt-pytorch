@@ -37,61 +37,63 @@ run = wandb.init(
     }
 )
 
-autoencoder = MeshAutoencoder(
-    dim = run.config.autoencoder["dim"],
-    encoder_depth = run.config.autoencoder["encoder_depth"],
-    decoder_depth = run.config.autoencoder["decoder_depth"],
-    num_discrete_coors = run.config.autoencoder["num_discrete_coors"]
-).to(device)
+# autoencoder = MeshAutoencoder(
+#     dim = run.config.autoencoder["dim"],
+#     encoder_depth = run.config.autoencoder["encoder_depth"],
+#     decoder_depth = run.config.autoencoder["decoder_depth"],
+#     num_discrete_coors = run.config.autoencoder["num_discrete_coors"]
+# ).to(device)
 
-trainer = MeshAutoencoderTrainer(
-    autoencoder,
-    dataset = dataset,
-    batch_size = wandb.config.batch_size,
-    grad_accum_every = wandb.config.grad_accum_every,
-    num_train_steps = wandb.config.num_train_steps,
-    checkpoint_every = wandb.config.checkpoint_every,
-    warmup_steps = wandb.config.warmup_steps,
-    learning_rate = wandb.config.learning_rate,
-    use_wandb_tracking = True,
-)
+# trainer = MeshAutoencoderTrainer(
+#     autoencoder,
+#     dataset = dataset,
+#     batch_size = wandb.config.batch_size,
+#     grad_accum_every = wandb.config.grad_accum_every,
+#     num_train_steps = wandb.config.num_train_steps,
+#     checkpoint_every = wandb.config.checkpoint_every,
+#     warmup_steps = wandb.config.warmup_steps,
+#     learning_rate = wandb.config.learning_rate,
+#     use_wandb_tracking = True,
+# )
 
-trainer()
+# trainer()
 
-from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
+# from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
 
-transformer = MeshTransformer(
-    autoencoder,
-    dim=512,
-    max_seq_len=768
-).to(device)
+# transformer = MeshTransformer(
+#     autoencoder,
+#     dim=512,
+#     max_seq_len=768
+# ).to(device)
 
-transformer_trainer = MeshTransformerTrainer(
-    transformer,
-    dataset=dataset,
-    batch_size=wandb.config.batch_size,
-    grad_accum_every=wandb.config.grad_accum_every,
-    num_train_steps=wandb.config.num_train_steps,
-    checkpoint_every=wandb.config.checkpoint_every,
-    warmup_steps=wandb.config.warmup_steps,
-    learning_rate=wandb.config.learning_rate,
-    use_wandb_tracking=True,
-)
+# transformer_trainer = MeshTransformerTrainer(
+#     transformer,
+#     dataset=dataset,
+#     batch_size=wandb.config.batch_size,
+#     grad_accum_every=wandb.config.grad_accum_every,
+#     num_train_steps=wandb.config.num_train_steps,
+#     checkpoint_every=wandb.config.checkpoint_every,
+#     warmup_steps=wandb.config.warmup_steps,
+#     learning_rate=wandb.config.learning_rate,
+#     use_wandb_tracking=True,
+# )
 
-transformer_trainer()
+# transformer_trainer()
 
-continuous_coors  = transformer.generate()
+# continuous_coors  = transformer.generate()
 
 # Move the tensor to CPU before converting to a list
-continuous_coors_list = continuous_coors.cpu().tolist()
+# continuous_coors_list = continuous_coors.cpu().tolist()
+
+# import json
+
+# with open('continuous_coors.json', 'w') as f:
+#     json.dump(continuous_coors.tolist(), f)
 
 import json
 
-with open('continuous_coors.json', 'w') as f:
-    json.dump(continuous_coors.tolist(), f)
-
-# with open('continuous_coors.json', 'r') as f:
-#     continuous_coors_list = json.load(f)
+with open('continuous_coors.json', 'r') as f:
+    continuous_coors_list = json.load(f)
 
 flat_list = [item for sublist in continuous_coors_list for item in sublist]
 
