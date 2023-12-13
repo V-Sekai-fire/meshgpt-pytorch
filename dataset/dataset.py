@@ -164,19 +164,42 @@ class MeshDataset(Dataset):
                 new_face.append(vertex_map[vertex_index])
             new_faces.append(new_face)
 
+        # Seed the random number generator
         random.seed(self.seed + idx * self.augments_per_item + idx)
-        scale = random.uniform(0.8, 1.2)  # Uniform scaling
-        rotation = R.from_euler('y', random.uniform(-180, 180), degrees=True)  # Random rotation around y-axis
-        translation = np.array([random.uniform(-0.5, 0.5) for _ in [0, 2]])  # Random translation in x and z directions
-        translation = np.pad(translation, (0, 1), 'constant', constant_values=(0,))
 
-        new_vertices = [(np.dot(rotation.as_matrix(), np.array(v)*scale) + translation).tolist() for v in new_vertices]
+        # Generate a random scale factor
+        scale = random.uniform(0.8, 1.2)  
 
+       # Get the original lowest point of the object in all dimensions
+        original_lowest_point = [min(vertex[1] for vertex in new_vertices) for i in range(3)]
+
+        # Translate the vertices so that the lowest point is at the origin
+        translated_vertices = [[v[i] - original_lowest_point[i] for i in range(3)] for v in new_vertices]
+
+        # Generate a random rotation matrix
+        rotation = R.from_euler('y', random.uniform(-180, 180), degrees=True)  
+
+        # Generate a random translation vector in the x and z directions
+        translation = np.array([random.uniform(-0.5, 0.5) for _ in [0, 2]])  
+        translation = np.append(translation, 0)
+
+        # Apply the transformations to each vertex of the object
+        new_vertices = [(np.dot(rotation.as_matrix(), np.array(v)*scale) + translation).tolist() for v in translated_vertices]
+
+        # Get the new lowest point of the object in y dimension
+        new_lowest_y = min(vertex[1] for vertex in new_vertices)
+
+        # Calculate the difference between the original and new lowest y
+        y_diff = original_lowest_point[1] - new_lowest_y
+
+        # Translate the vertices so that the new lowest point is at the same y as the original lowest point
+        final_vertices = [[v[0], v[1] + y_diff, v[2]] for v in new_vertices]
 
         return (
-            torch.tensor(new_vertices, dtype=torch.float),
+            torch.tensor(final_vertices, dtype=torch.float),
             torch.tensor(new_faces, dtype=torch.long),
         )
+
 
 if __name__ == "__main__":
 
