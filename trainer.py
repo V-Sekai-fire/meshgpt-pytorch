@@ -17,11 +17,11 @@ run = wandb.init(
     project="meshgpt-pytorch",
     
     config={
-        "learning_rate": 0.0001,
+        "learning_rate": 0.001,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
-        "num_train_steps": 2000,
-        "warmup_steps": 1000,
+        "num_train_steps": 100,
+        "warmup_steps": 1,
         "batch_size": 1,
         "grad_accum_every": 1,
         "checkpoint_every": 10,
@@ -56,3 +56,29 @@ trainer = MeshAutoencoderTrainer(
 )
 
 trainer()
+
+from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
+
+transformer = MeshTransformer(
+    autoencoder,
+    dim=512,
+    max_seq_len=768
+).to(device)
+
+transformer_trainer = MeshTransformerTrainer(
+    transformer,
+    dataset=dataset,
+    batch_size=wandb.config.batch_size,
+    grad_accum_every=wandb.config.grad_accum_every,
+    num_train_steps=wandb.config.num_train_steps,
+    checkpoint_every=wandb.config.checkpoint_every,
+    warmup_steps=wandb.config.warmup_steps,
+    learning_rate=wandb.config.learning_rate,
+    use_wandb_tracking=True,
+)
+
+transformer_trainer()
+
+faces_coordinates = transformer.generate()
+
+dataset.convert_to_glb(faces_coordinates, "output.glb")
