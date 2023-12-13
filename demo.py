@@ -18,12 +18,12 @@ run = wandb.init(
     project="meshgpt-pytorch",
     
     config={
-        "learning_rate": 0.002,
+        "learning_rate": 1e-3,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
-        "num_train_steps": 1000,
-        "warmup_steps": 1,
-        "batch_size": 1,
+        "num_train_steps": 100,
+        "warmup_steps": 10,
+        "batch_size": 4,
         "grad_accum_every": 1,
         "checkpoint_every": 10,
         "device": str(device),
