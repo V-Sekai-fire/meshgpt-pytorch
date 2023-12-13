@@ -38,8 +38,8 @@ run = wandb.init(
 )
 
 if True:
-    load_from_checkpoint = True
-    checkpoint_path = 'checkpoints/mesh-autoencoder.ckpt.40.pt'
+    load_from_checkpoint = False
+    checkpoint_path = 'checkpoints/mesh-autoencoder.ckpt.72.pt'
     autoencoder = None
     if load_from_checkpoint and os.path.isfile(checkpoint_path):
         # Initialize the autoencoder first
