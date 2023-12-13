@@ -102,7 +102,11 @@ class MeshDataset(Dataset):
     def __getitem__(self, idx):
         files = self.filter_files()
         file_idx = idx // self.augments_per_item
+        augment_idx = idx % self.augments_per_item
         file_path = os.path.join(self.folder_path, files[file_idx])
+
+        print(f"File Path: {file_path} Augmentation Index: {augment_idx} Index: {idx}")
+
         _, file_extension = os.path.splitext(file_path)
 
         scene = trimesh.load(file_path, force="scene")
