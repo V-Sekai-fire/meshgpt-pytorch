@@ -21,7 +21,7 @@ run = wandb.init(
         "learning_rate": 0.002,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
-        "num_train_steps": 100,
+        "num_train_steps": 10,
         "warmup_steps": 1,
         "batch_size": 1,
         "grad_accum_every": 1,
@@ -81,15 +81,19 @@ transformer_trainer = MeshTransformerTrainer(
 transformer_trainer()
 
 continuous_coors  = transformer.generate()
+
+# Move the tensor to CPU before converting to a list
+continuous_coors_list = continuous_coors.cpu().tolist()
+
 import json
 
 with open('continuous_coors.json', 'w') as f:
     json.dump(continuous_coors.tolist(), f)
 
 # with open('continuous_coors.json', 'r') as f:
-#     continuous_coors = json.load(f)
+#     continuous_coors_list = json.load(f)
 
-flat_list = [item for sublist in continuous_coors for item in sublist]
+flat_list = [item for sublist in continuous_coors_list for item in sublist]
 
 vertices = [vertex for sublist in flat_list for vertex in sublist]
 print("Vertices:", vertices)
