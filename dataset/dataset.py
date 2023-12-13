@@ -97,7 +97,7 @@ class MeshDataset(Dataset):
     def __len__(self):
         return len(self.filter_files()) * self.augments_per_item
 
-    def augment_mesh(self, base_mesh, augment_count, augment_idx, seed):
+    def augment_mesh(self, base_mesh, augment_count, augment_idx):
         # Generate a random scale factor
         scale = random.uniform(0.8, 1.2)
 
@@ -221,7 +221,6 @@ class MeshDataset(Dataset):
             ),
             self.augments_per_item,
             augment_idx,
-            self.seed + augment_idx,
         )
 
 
