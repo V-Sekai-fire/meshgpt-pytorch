@@ -38,13 +38,11 @@ run = wandb.init(
 )
 
 if True:
-    
     autoencoder = MeshAutoencoder(
         dim = run.config.autoencoder["dim"],
         encoder_depth = run.config.autoencoder["encoder_depth"],
         decoder_depth = run.config.autoencoder["decoder_depth"],
-        num_discrete_coors = run.config.autoencoder["num_discrete_coors"],
-        use_residual_lfq  = False
+        num_discrete_coors = run.config.autoencoder["num_discrete_coors"]
     ).to(device)
 
     trainer = MeshAutoencoderTrainer(
@@ -59,13 +57,13 @@ if True:
         use_wandb_tracking = True,
     )
 
-    trainer.train(20)
+    trainer()
 
     from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
 
     transformer = MeshTransformer(
         autoencoder,
-        dim = run.config.autoencoder["dim"],
+        dim=512,
         max_seq_len=768
     ).to(device)
 
@@ -81,7 +79,7 @@ if True:
         use_wandb_tracking=True,
     )
 
-    transformer_trainer.train(10)
+    transformer_trainer()
 
     continuous_coors  = transformer.generate()
 
