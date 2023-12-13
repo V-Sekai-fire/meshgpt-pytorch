@@ -18,14 +18,14 @@ class MeshDataset(Dataset):
         self.file_list = os.listdir(folder_path)
 
     @staticmethod
-    def compare_faces(face_a, face_b, vertices):
+    def compare_faces(face_a, face_b, axis_order, vertices):
         for i in range(3):
             # Check if face indices are within the range of vertices list
             if face_a[i] >= len(vertices) or face_b[i] >= len(vertices):
                 raise IndexError("Face index out of range")
 
             vertex_comparison = MeshDataset.compare_vertices(
-                vertices[face_a[i]], vertices[face_b[i]]
+                vertices[face_a[i]], vertices[face_b[i]], axis_order
             )
             if vertex_comparison != 0:
                 return vertex_comparison
@@ -77,22 +77,16 @@ class MeshDataset(Dataset):
         return True
 
     @staticmethod
-    def compare_vertices(vertex_a, vertex_b):
-        # glTF uses right-handed coordinate system (Y-Z-X).
-        # Y is up and is different from the meshgpt paper.
-        if vertex_a[1] < vertex_b[1]:
-            return -1
-        elif vertex_a[1] > vertex_b[1]:
-            return 1
-        elif vertex_a[2] < vertex_b[2]:
-            return -1
-        elif vertex_a[2] > vertex_b[2]:
-            return 1
-        elif vertex_a[0] < vertex_b[0]:
-            return -1
-        elif vertex_a[0] > vertex_b[0]:
-            return 1
+    def compare_vertices(vertex_a, vertex_b, axis_order):
+        # Compare vertices according to the defined axis order
+        for axis in axis_order:
+            if vertex_a[axis] < vertex_b[axis]:
+                return -1
+            elif vertex_a[axis] > vertex_b[axis]:
+                return 1
+
         return 0
+
 
     def filter_files(self):
         filtered_list = [
@@ -108,6 +102,19 @@ class MeshDataset(Dataset):
     def __getitem__(self, idx):
         files = self.filter_files()
         file_path = os.path.join(self.folder_path, files[idx])
+        _, file_extension = os.path.splitext(file_path)
+
+        axis_orders = {
+            '.ply': [1, 2, 0],  # Y-Z-X
+            '.stl': [0, 1, 2],  # X-Y-Z
+            '.obj': [0, 2, 1],  # X-Z-Y
+            '.glb': [1, 2, 0],  # Y-Z-X
+            '.gltf': [1, 2, 0]  # Y-Z-X
+        }
+
+        # Get the axis order for the current file type
+        axis_order = axis_orders.get(file_extension, [0, 1, 2])
+
         scene = trimesh.load(file_path, force="scene")
         vertex_indices = {}
 
@@ -125,6 +132,8 @@ class MeshDataset(Dataset):
 
             vertices = [tuple(vertex) for vertex in geometry.vertices]
             vertex_indices.update({v: i for i, v in enumerate(vertices)})
+
+            geometry.vertices = np.array(vertices)
 
             offset = len(all_vertices)
 
@@ -145,7 +154,7 @@ class MeshDataset(Dataset):
 
         all_faces.sort(
             key=functools.cmp_to_key(
-                lambda a, b: MeshDataset.compare_faces(a, b, all_vertices)
+                lambda a, b: MeshDataset.compare_faces(a, b, axis_order, all_vertices)
             )
         )
 
