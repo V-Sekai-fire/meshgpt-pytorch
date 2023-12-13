@@ -1,3 +1,6 @@
+# run at start
+import matplotlib.pyplot as plt
+from tqdm import tqdm
 from pathlib import Path
 from functools import partial
 from packaging import version
@@ -96,7 +99,6 @@ def get_optimizer(
 
     return AdamW(params, **opt_kwargs)
 
-# autoencoder trainer
 
 class MeshAutoencoderTrainer(Module):
     @beartype
@@ -107,9 +109,6 @@ class MeshAutoencoderTrainer(Module):
         num_train_steps: int,
         batch_size: int,
         grad_accum_every: int,
-        val_dataset: Optional[Dataset] = None,
-        val_every: int = 100,
-        val_num_batches: int = 5,
         learning_rate: float = 1e-4,
         weight_decay: float = 0.,
         max_grad_norm: Optional[float] = None,
@@ -143,7 +142,7 @@ class MeshAutoencoderTrainer(Module):
         self.model = model
 
         if self.is_main:
-            self.ema_model = EMA(model, **ema_kwargs)
+            self.ema_model = EMA(model, **ema_kwargs).to('cuda')
 
         self.optimizer = get_optimizer(model.parameters(), lr = learning_rate, wd = weight_decay, **optimizer_kwargs)
 
@@ -161,22 +160,6 @@ class MeshAutoencoderTrainer(Module):
             drop_last = True,
             collate_fn = partial(custom_collate, pad_id = model.pad_id)
         )
-
-        self.should_validate = exists(val_dataset)
-
-        if self.should_validate:
-            assert len(val_dataset) > 0, 'your validation dataset is empty'
-
-            self.val_every = val_every
-            self.val_num_batches = val_num_batches
-
-            self.val_dataloader = DataLoader(
-                val_dataset,
-                batch_size = batch_size,
-                shuffle = True,
-                drop_last = True,
-                collate_fn = partial(custom_collate, pad_id = model.pad_id)
-            )
 
         self.data_kwargs = data_kwargs
 
@@ -285,90 +268,59 @@ class MeshAutoencoderTrainer(Module):
 
         self.step.copy_(pkg['step'])
 
-    def next_data_to_forward_kwargs(self, dl_iter) -> dict:
-        data = next(dl_iter)
+    def train(self, num_epochs):
+        epoch_losses = []  # Initialize a list to store epoch losses
 
-        if isinstance(data, tuple):
-            forward_kwargs = dict(zip(self.data_kwargs, data))
+        for epoch in range(num_epochs):
+            self.model.train()  # Set the model to training mode
+            total_loss = 0.0
+            num_batches = 0
 
-        elif isinstance(data, dict):
-            forward_kwargs = data
+            progress_bar = tqdm(self.dataloader, desc=f'Epoch {epoch + 1}/{num_epochs}')
 
-        return forward_kwargs
+            for data in progress_bar:
+                if isinstance(data, tuple):
+                    forward_kwargs = dict(zip(self.data_kwargs, data))
+                elif isinstance(data, dict):
+                    forward_kwargs = data
 
-    def forward(self):
-        step = self.step.item()
-        dl_iter = cycle(self.dataloader)
-
-        if self.is_main and self.should_validate:
-            val_dl_iter = cycle(self.val_dataloader)
-
-        while step < self.num_train_steps:
-
-            for i in range(self.grad_accum_every):
-                is_last = i == (self.grad_accum_every - 1)
-                maybe_no_sync = partial(self.accelerator.no_sync, self.model) if not is_last else nullcontext
-
-                forward_kwargs = self.next_data_to_forward_kwargs(dl_iter)
-
-                with self.accelerator.autocast(), maybe_no_sync():
+                with self.accelerator.autocast():
                     loss = self.model(**forward_kwargs)
-
                     self.accelerator.backward(loss / self.grad_accum_every)
 
-            self.print(f'loss: {loss.item():.3f}')
+                if exists(self.max_grad_norm):
+                    self.accelerator.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
 
-            self.log(loss = loss.item())
+                self.optimizer.step()
+                self.optimizer.zero_grad()
 
-            if exists(self.max_grad_norm):
-                self.accelerator.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
+                if not self.accelerator.optimizer_step_was_skipped:
+                    with self.warmup.dampening():
+                        self.scheduler.step()
 
-            self.optimizer.step()
-            self.optimizer.zero_grad()
+                # Update loss and progress bar
+                current_loss = loss.item()
+                total_loss += current_loss
+                num_batches += 1
+                progress_bar.set_postfix(loss=current_loss)
 
-            if not self.accelerator.optimizer_step_was_skipped:
-                with self.warmup.dampening():
-                    self.scheduler.step()
 
-            step += 1
-            self.step.add_(1)
+            # Calculate average loss for the epoch
+            avg_epoch_loss = total_loss / num_batches
+            avg_epoch_loss = total_loss / num_batches
+            epoch_losses.append(avg_epoch_loss)
+            self.print(f'Epoch {epoch + 1} average loss: {avg_epoch_loss:.3f}')
 
-            self.wait()
+        self.print('Training complete')
+         # Plot the training loss after all epochs
+        plt.figure(figsize=(10, 5))
+        plt.plot(range(1, num_epochs + 1), epoch_losses, marker='o')
+        plt.title('Training Loss Over Epochs')
+        plt.xlabel('Epoch')
+        plt.ylabel('Average Loss')
+        plt.grid(True)
+        # plt.show()
 
-            if self.is_main:
-                self.ema_model.update()
-
-            self.wait()
-
-            if self.is_main and self.should_validate and divisible_by(step, self.val_every):
-                total_val_loss = 0.
-                self.ema_model.eval()
-
-                num_val_batches = self.val_num_batches * self.grad_accum_every
-
-                for _ in range(num_val_batches):
-                    with self.accelerator.autocast(), torch.no_grad():
-
-                        forward_kwargs = self.next_data_to_forward_kwargs(val_dl_iter)
-
-                        val_loss = self.ema_model(**forward_kwargs)
-
-                        total_val_loss += (val_loss / num_val_batches)
-
-                self.print(f'valid loss: {total_val_loss:.3f}')
-                self.log(val_loss = total_val_loss, step = step)
-
-            self.wait()
-
-            if self.is_main:
-                checkpoint_num = step // self.checkpoint_every
-                self.save(self.checkpoint_folder / f'mesh-autoencoder.ckpt.{checkpoint_num}.pt')
-
-            self.wait()
-
-        self.print('training complete')
-
-# mesh transformer trainer
 
 class MeshTransformerTrainer(Module):
     @beartype
@@ -528,52 +480,54 @@ class MeshTransformerTrainer(Module):
         self.warmup.load_state_dict(pkg['warmup'])
         self.step.copy_(pkg['step'])
 
-    def forward(self):
-        step = self.step.item()
-        dl_iter = cycle(self.dataloader)
+    def train(self, num_epochs):
+        epoch_losses = []  # Initialize a list to store epoch losses
+        for epoch in range(num_epochs):
+            self.model.train()
+            total_loss = 0.0
+            num_batches = 0
 
-        while step < self.num_train_steps:
-
-            for i in range(self.grad_accum_every):
-                is_last = i == (self.grad_accum_every - 1)
-                maybe_no_sync = partial(self.accelerator.no_sync, self.model) if not is_last else nullcontext
-
-                data = next(dl_iter)
-
+            progress_bar = tqdm(self.dataloader, desc=f'Epoch {epoch + 1}/{num_epochs}')
+            for batch_idx, data in enumerate(progress_bar):
                 if isinstance(data, tuple):
                     forward_kwargs = dict(zip(self.data_kwargs, data))
-
                 elif isinstance(data, dict):
                     forward_kwargs = data
 
+                # Gradient accumulation
+                is_last = (batch_idx + 1) % self.grad_accum_every == 0
+                maybe_no_sync = partial(self.accelerator.no_sync, self.model) if not is_last else nullcontext
                 with self.accelerator.autocast(), maybe_no_sync():
                     loss = self.model(**forward_kwargs)
-
                     self.accelerator.backward(loss / self.grad_accum_every)
 
-            self.print(f'loss: {loss.item():.3f}')
+                if is_last or batch_idx == len(self.dataloader) - 1:
+                    if exists(self.max_grad_norm):
+                        self.accelerator.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
+                    self.optimizer.step()
+                    self.optimizer.zero_grad()
 
-            self.log(loss = loss.item())
+                # Progress bar and loss tracking
+                current_loss = loss.item()
+                total_loss += current_loss
+                num_batches += 1
+                progress_bar.set_postfix(loss=current_loss)
 
-            if exists(self.max_grad_norm):
-                self.accelerator.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
+                if not self.accelerator.optimizer_step_was_skipped:
+                    with self.warmup.dampening():
+                        self.scheduler.step()
 
-            self.optimizer.step()
-            self.optimizer.zero_grad()
+            # Average loss per epoch
+            avg_epoch_loss = total_loss / num_batches
+            epoch_losses.append(avg_epoch_loss)
+            self.print(f'Epoch {epoch + 1} average loss: {avg_epoch_loss:.3f}')
 
-            if not self.accelerator.optimizer_step_was_skipped:
-                with self.warmup.dampening():
-                    self.scheduler.step()
-
-            step += 1
-            self.step.add_(1)
-
-            self.wait()
-
-            if self.is_main and divisible_by(step, self.checkpoint_every):
-                checkpoint_num = step // self.checkpoint_every
-                self.save(self.checkpoint_folder / f'mesh-transformer.ckpt.{checkpoint_num}.pt')
-
-            self.wait()
-
-        self.print('training complete')
+        self.print('Training complete')
+         # Plot the training loss after all epochs
+        plt.figure(figsize=(10, 5))
+        plt.plot(range(1, num_epochs + 1), epoch_losses, marker='o')
+        plt.title('Training Loss Over Epochs')
+        plt.xlabel('Epoch')
+        plt.ylabel('Average Loss')
+        plt.grid(True)
+        plt.show()
