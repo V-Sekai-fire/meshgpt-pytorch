@@ -21,7 +21,6 @@ class MeshDataset(Dataset):
         self.supported_formats = (".glb", ".gltf")
         self.augments_per_item = 200
         self.seed = 42
-        random.seed(self.seed)
 
     @staticmethod
     def compare_faces(face_a, face_b, vertices):
@@ -98,6 +97,8 @@ class MeshDataset(Dataset):
         return len(self.filter_files()) * self.augments_per_item
 
     def augment_mesh(self, base_mesh, augment_count, augment_idx):
+        random.seed(self.seed + augment_count * augment_idx + augment_idx)
+
         # Generate a random scale factor
         scale = random.uniform(0.8, 1.2)
 
