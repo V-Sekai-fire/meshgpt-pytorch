@@ -10,13 +10,16 @@ import wandb
 
 from abc import abstractmethod
 import os
-
+import random
+from scipy.spatial.transform import Rotation as R
 
 class MeshDataset(Dataset):
     def __init__(self, folder_path):
         self.folder_path = folder_path
         self.file_list = os.listdir(folder_path)
         self.supported_formats = (".glb", ".gltf")
+        self.augments_per_item = 200
+        self.seed = 42
 
     @staticmethod
     def compare_faces(face_a, face_b, vertices):
@@ -39,9 +42,6 @@ class MeshDataset(Dataset):
             if file.endswith(self.supported_formats)
         ]
         return filtered_list
-
-    def __len__(self):
-        return len(self.filter_files())
 
     @staticmethod
     def convert_to_glb(json_data, output_file_path):
@@ -97,11 +97,12 @@ class MeshDataset(Dataset):
         return filtered_list
 
     def __len__(self):
-        return len(self.filter_files())
+        return len(self.filter_files()) * self.augments_per_item
 
     def __getitem__(self, idx):
         files = self.filter_files()
-        file_path = os.path.join(self.folder_path, files[idx])
+        file_idx = idx // self.augments_per_item
+        file_path = os.path.join(self.folder_path, files[file_idx])
         _, file_extension = os.path.splitext(file_path)
 
         scene = trimesh.load(file_path, force="scene")
@@ -159,6 +160,15 @@ class MeshDataset(Dataset):
                 new_face.append(vertex_map[vertex_index])
             new_faces.append(new_face)
 
+        random.seed(self.seed + idx * self.augments_per_item + idx)
+        scale = random.uniform(0.8, 1.2)  # Uniform scaling
+        rotation = R.from_euler('y', random.uniform(-180, 180), degrees=True)  # Random rotation around y-axis
+        translation = np.array([random.uniform(-0.5, 0.5) for _ in [0, 2]])  # Random translation in x and z directions
+        translation = np.pad(translation, (0, 1), 'constant', constant_values=(0,))
+
+        new_vertices = [(np.dot(rotation.as_matrix(), np.array(v)*scale) + translation).tolist() for v in new_vertices]
+
+
         return (
             torch.tensor(new_vertices, dtype=torch.float),
             torch.tensor(new_faces, dtype=torch.long),
@@ -173,7 +183,9 @@ if __name__ == "__main__":
     with open("unit_test/mesh_00.json", "wb") as f:
         f.write(json.dumps(mesh_00).encode())
 
-    dataset.convert_to_glb(mesh_00, "unit_test/box_test_01.glb")
+    # for i in range(1, 10):
+    #     mesh = [tensor.tolist() for tensor in dataset.__getitem__(i)]
+    #     dataset.convert_to_glb(mesh, f"unit_test/mesh_{str(i).zfill(2)}.glb")
 
     for i in range(1, 2):
         mesh = [tensor.tolist() for tensor in dataset.__getitem__(i)]
