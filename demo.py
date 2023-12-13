@@ -63,7 +63,7 @@ from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
 transformer = MeshTransformer(
     autoencoder,
     dim=512,
-    max_seq_len=768
+    max_seq_len=6000
 ).to(device)
 
 transformer_trainer = MeshTransformerTrainer(
