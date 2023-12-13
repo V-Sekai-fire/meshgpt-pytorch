@@ -1,5 +1,4 @@
-# Assuming you have a predefined GLTFDataset class already implemented.
-from gltf_dataset.gltf_dataset import GLTFDataset
+from gltf_dataset.gltf_dataset import GLTFMeshDataset
 import wandb, torch
 from meshgpt_pytorch import (
     MeshAutoencoder,
@@ -15,7 +14,7 @@ wandb.init(
     project="meshgpt-pytorch"
 )
 
-dataset = GLTFDataset('gltf_dataset/blockmesh_test/blockmesh')
+dataset = GLTFMeshDataset('gltf_dataset/blockmesh_test/blockmesh')
 
 checkpoint_path = 'checkpoints/mesh-autoencoder.ckpt.1.pt'
 

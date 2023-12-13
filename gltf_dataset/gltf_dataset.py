@@ -9,7 +9,7 @@ import functools
 import wandb
 
 
-class GLTFDataset(Dataset):
+class GLTFMeshDataset(Dataset):
     def __init__(self, folder_path, use_wandb_tracking = False):
         self.folder_path = folder_path
         self.file_list = os.listdir(folder_path)
@@ -39,7 +39,7 @@ class GLTFDataset(Dataset):
             if face_a[i] >= len(vertices) or face_b[i] >= len(vertices):
                 raise IndexError("Face index out of range")
 
-            vertex_comparison = GLTFDataset.compare_vertices(
+            vertex_comparison = GLTFMeshDataset.compare_vertices(
                 vertices[face_a[i]], vertices[face_b[i]]
             )
             if vertex_comparison != 0:
@@ -97,7 +97,7 @@ class GLTFDataset(Dataset):
 
         all_faces.sort(
             key=functools.cmp_to_key(
-                lambda a, b: GLTFDataset.compare_faces(a, b, all_vertices)
+                lambda a, b: GLTFMeshDataset.compare_faces(a, b, all_vertices)
             )
         )
 
@@ -152,7 +152,7 @@ class GLTFDataset(Dataset):
 
 
 if __name__ == "__main__":
-    dataset = GLTFDataset("unit_test")
+    dataset = GLTFMeshDataset("unit_test")
 
     mesh_00 = dataset.__getitem__(0)
     with open("mesh_00.json", "wb") as f:
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     with open("mesh_01.json", "wb") as f:
         f.write(json.dumps(mesh_01).encode())
 
-    if GLTFDataset.compare_json(mesh_00, mesh_01):
+    if GLTFMeshDataset.compare_json(mesh_00, mesh_01):
         print("JSON data 00 and 01 are the same.")
     else:
         print("JSON data 00 and 01 are different.")
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     with open("mesh_03.json", "wb") as f:
         f.write(json.dumps(mesh_03).encode())
 
-    if GLTFDataset.compare_json(mesh_02, mesh_03):
+    if GLTFMeshDataset.compare_json(mesh_02, mesh_03):
         print("JSON data 02 and 03 are the same.")
     else:
         print("JSON data 02 and 03 are different.")
