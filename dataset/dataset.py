@@ -103,7 +103,6 @@ class MeshDataset(Dataset):
         scale = random.uniform(0.8, 1.2)
 
         vertices = base_mesh[0]
-        faces = base_mesh[1]
 
         # Scale the original vertices
         scaled_vertices = [[v[i] * scale for i in range(3)] for v in vertices]
@@ -147,7 +146,7 @@ class MeshDataset(Dataset):
 
         return (
             torch.tensor(final_vertices, dtype=torch.float),
-            torch.tensor(faces, dtype=torch.long),
+            base_mesh[1],
         )
 
     def __getitem__(self, idx):
