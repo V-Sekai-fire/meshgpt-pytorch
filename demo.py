@@ -77,10 +77,14 @@ trainer.train(run.config.autoencoder_train)
 
 from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
 
+seq_len = dataset.__getitem__(0)[1].size() * 3
+
+print(f"Sequence length: {seq_len}")
+
 transformer = MeshTransformer(
     autoencoder,
     dim=512,
-    max_seq_len=384,
+    max_seq_len=seq_len,
 ).to(device)
 
 transformer_trainer = MeshTransformerTrainer(
