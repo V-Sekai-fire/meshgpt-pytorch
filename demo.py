@@ -23,16 +23,18 @@ run = wandb.init(
         "num_train_steps": 3000,
         "num_transformer_train_steps": 1000,
         "warmup_steps": 1000,
-        "batch_size": 128,
+        "batch_size": 1,
         "grad_accum_every": 1,
         "checkpoint_every": 20,
         "device": str(device),
+        "autoencoder_train": 20,
         "autoencoder": {
             "dim": 512,
             "encoder_depth": 6,
             "decoder_depth": 6,
             "num_discrete_coors": 128,
         },
+        "transformer_train": 20,
         "dataset_size": dataset.__len__(),
     },
 )
@@ -71,7 +73,7 @@ trainer = MeshAutoencoderTrainer(
     learning_rate=wandb.config.learning_rate,
     use_wandb_tracking=True,
 )
-trainer()
+trainer.train(run.config.autoencoder["autoencoder_train"])
 
 from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
 
@@ -93,7 +95,7 @@ transformer_trainer = MeshTransformerTrainer(
     use_wandb_tracking=True,
 )
 
-transformer_trainer()
+transformer_trainer.train(run.config.autoencoder["transformer_train"])
 
 continuous_coors = transformer.generate()
 
