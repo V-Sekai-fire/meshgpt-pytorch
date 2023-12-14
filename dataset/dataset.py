@@ -105,23 +105,17 @@ class MeshDataset(Dataset):
 
         vertices = base_mesh[0]
 
-        # Scale the original vertices
-        scaled_vertices = [[v[i] * scale for i in range(3)] for v in vertices]
-
-        # Get the original lowest point of the object in all dimensions
-        original_lowest_point = [
-            min(vertex[i] for vertex in scaled_vertices) for i in range(3)
-        ]
-
         # Calculate the centroid of the object
         centroid = [
-            sum(vertex[i] for vertex in scaled_vertices) / len(scaled_vertices)
-            for i in range(3)
+            sum(vertex[i] for vertex in vertices) / len(vertices) for i in range(3)
         ]
 
         # Translate the vertices so that the centroid is at the origin
-        translated_vertices = [
-            [v[i] - centroid[i] for i in range(3)] for v in scaled_vertices
+        translated_vertices = [[v[i] - centroid[i] for i in range(3)] for v in vertices]
+
+        # Scale the translated vertices
+        scaled_vertices = [
+            [v[i] * scale for i in range(3)] for v in translated_vertices
         ]
 
         # Generate a random rotation matrix
@@ -130,20 +124,17 @@ class MeshDataset(Dataset):
         # Apply the transformations to each vertex of the object
         new_vertices = [
             (np.dot(rotation.as_matrix(), np.array(v))).tolist()
-            for v in translated_vertices
+            for v in scaled_vertices
         ]
 
         # Translate the vertices back so that the centroid is at its original position
         final_vertices = [[v[i] + centroid[i] for i in range(3)] for v in new_vertices]
 
-        # Get the new lowest point of the object in y dimension
-        new_lowest_y = min(vertex[1] for vertex in final_vertices)
-
-        # Calculate the difference between the original and new lowest y
-        y_diff = original_lowest_point[1] - new_lowest_y
-
-        # Translate the vertices so that the new lowest point is at the same y as the original lowest point
-        final_vertices = [[v[0], v[1] + y_diff, v[2]] for v in final_vertices]
+        # Normalize uniformly to fill [0, 1]
+        min_vals = np.min(final_vertices, axis=0)
+        max_vals = np.max(final_vertices, axis=0)
+        max_range = np.max(max_vals - min_vals)
+        final_vertices = [(v - min_vals) / max_range for v in final_vertices]
 
         return (
             torch.tensor(final_vertices, dtype=torch.float),
@@ -164,22 +155,11 @@ class MeshDataset(Dataset):
         all_faces = []
         all_vertices = []
 
-        bbox = scene.bounds
-
-        max_dim = np.max(bbox[1] - bbox[0])
-
-        scale_factor = 1 / max_dim
-
         for mesh_idx, (name, geometry) in enumerate(scene.geometry.items()):
             vertex_indices = {}
 
             try:
                 geometry.apply_transform(scene.graph.get(name)[0])
-                geometry.apply_scale(scale_factor)
-                
-                # Recenter the geometry
-                min_z = np.min(geometry.vertices[:, 2])
-                geometry.vertices -= [bbox[0][0]/2, bbox[0][1]/2, min_z]
             except Exception as e:
                 pass
 
@@ -203,8 +183,6 @@ class MeshDataset(Dataset):
 
             all_faces.extend(faces)
             all_vertices.extend(vertices)
-
-        all_vertices = [(v[0]*scale_factor, v[1]*scale_factor, v[2]*scale_factor) for v in all_vertices]
 
         all_faces.sort(
             key=functools.cmp_to_key(
