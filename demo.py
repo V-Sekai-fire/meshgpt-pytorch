@@ -38,7 +38,7 @@ run = wandb.init(
 )
 
 load_from_checkpoint = True
-checkpoint_path = "checkpoints/mesh-autoencoder.ckpt.100.pt"
+checkpoint_path = "checkpoints/mesh-autoencoder.ckpt.27.pt"
 autoencoder = None
 num_train_steps = None
 if load_from_checkpoint and os.path.isfile(checkpoint_path):
