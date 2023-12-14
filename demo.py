@@ -38,7 +38,7 @@ run = wandb.init(
 )
 
 if True:
-    load_from_checkpoint = True
+    load_from_checkpoint = False
     checkpoint_path = "checkpoints/mesh-autoencoder.ckpt.20.pt"
     autoencoder = None
     if load_from_checkpoint and os.path.isfile(checkpoint_path):
@@ -76,7 +76,7 @@ if True:
     transformer = MeshTransformer(
         autoencoder,
         dim=512,
-        max_seq_len=768,
+        max_seq_len=3384,
     ).to(device)
 
     transformer_trainer = MeshTransformerTrainer(
