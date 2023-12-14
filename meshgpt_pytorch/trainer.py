@@ -56,6 +56,13 @@ def cycle(dl):
         for data in dl:
             yield data
 
+def maybe_del(d: dict, *keys):
+    for key in keys:
+        if key not in d:
+            continue
+
+        del d[key]
+
 # optimizer
 
 def separate_weight_decayable_params(params):
@@ -299,6 +306,7 @@ class MeshAutoencoderTrainer(Module):
         elif isinstance(data, dict):
             forward_kwargs = data
 
+        maybe_del(forward_kwargs, 'texts', 'text_embeds')
         return forward_kwargs
 
     def forward(self):
@@ -450,7 +458,7 @@ class MeshTransformerTrainer(Module):
         checkpoint_every = 1000, 
         checkpoint_every_epoch: Optional[int] = None,
         checkpoint_folder = './checkpoints',
-        data_kwargs: Tuple[str, ...] = ['vertices', 'faces', 'face_edges', 'face_len', 'face_edges_len'],
+        data_kwargs: Tuple[str, ...] = ['vertices', 'faces', 'face_edges'],
         warmup_steps = 1000,
         use_wandb_tracking = False
     ):
