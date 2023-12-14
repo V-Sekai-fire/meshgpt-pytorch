@@ -21,18 +21,19 @@ print(f"Sequence length: {seq_len}")
 run = wandb.init(
     project="meshgpt-pytorch",
     config={
-        "learning_rate": 1e-3,
+        "autoencoder_learning_rate": 0.2,
+        "transformer_learning_rate": 0.2,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
         "num_train_steps": 3000,
         "num_transformer_train_steps": 1000,
         "warmup_steps": 1000,
-        "batch_size": 8,
+        "batch_size": 1,
         "grad_accum_every": 1,
         "checkpoint_every": 40,
         "device": str(device),
-        "transformer_train": 320,
-        "autoencoder_train": 320,
+        "autoencoder_train": 10,
+        "transformer_train": 20,
         "autoencoder": {
             "dim": 512,
             "encoder_depth": 6,
@@ -74,7 +75,7 @@ trainer = MeshAutoencoderTrainer(
     num_train_steps=num_train_steps,
     checkpoint_every=wandb.config.checkpoint_every,
     warmup_steps=wandb.config.warmup_steps,
-    learning_rate=wandb.config.learning_rate,
+    learning_rate=wandb.config.autoencoder_learning_rate,
     use_wandb_tracking=True,
 )
 trainer.train(run.config.autoencoder_train)
@@ -95,7 +96,7 @@ transformer_trainer = MeshTransformerTrainer(
     num_train_steps=wandb.config.num_transformer_train_steps,
     checkpoint_every=wandb.config.checkpoint_every,
     warmup_steps=wandb.config.warmup_steps,
-    learning_rate=wandb.config.learning_rate,
+    learning_rate=wandb.config.transformer_learning_rate,
     use_wandb_tracking=True,
 )
 
