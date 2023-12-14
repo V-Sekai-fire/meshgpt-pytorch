@@ -130,16 +130,22 @@ class MeshDataset(Dataset):
         # Translate the vertices back so that the centroid is at its original position
         final_vertices = [[v[i] + centroid[i] for i in range(3)] for v in new_vertices]
 
-        # Normalize uniformly to fill [0, 1]
+        # Normalize uniformly to fill [0, 1] only if max value is greater than 1
         min_vals = np.min(final_vertices, axis=0)
         max_vals = np.max(final_vertices, axis=0)
-        max_range = np.max(max_vals - min_vals)
-        final_vertices = [(v - min_vals) / max_range for v in final_vertices]
+
+        if np.any(max_vals > 1):
+            # Find the maximum value across all dimensions
+            max_val = np.max(max_vals)
+            
+            # Scale all vertices by the same factor
+            final_vertices = [(v - min_vals) / max_val for v in final_vertices]
 
         return (
             torch.from_numpy(np.array(final_vertices, dtype=np.float32)),
             base_mesh[1],
         )
+
 
     def __getitem__(self, idx):
         files = self.filter_files()
