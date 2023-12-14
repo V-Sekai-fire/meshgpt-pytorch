@@ -14,7 +14,7 @@ dataset_directory = "dataset/unit_test"
 
 dataset = MeshDataset(dataset_directory)
 
-seq_len = len(dataset.__getitem__(0)[0]) * 6
+seq_len = len(dataset.__getitem__(0)[0]) * 12
 
 print(f"Sequence length: {seq_len}")
 
@@ -31,6 +31,7 @@ run = wandb.init(
         "grad_accum_every": 1,
         "checkpoint_every": 40,
         "device": str(device),
+        "transformer_train": 320,
         "autoencoder_train": 320,
         "autoencoder": {
             "dim": 512,
@@ -38,7 +39,6 @@ run = wandb.init(
             "decoder_depth": 6,
             "num_discrete_coors": 128,
         },
-        "transformer_train": 320,
         "dataset_size": dataset.__len__(),
     },
 )
