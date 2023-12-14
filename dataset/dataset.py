@@ -141,7 +141,6 @@ class MeshDataset(Dataset):
             base_mesh[1],
         )
 
-
     def __getitem__(self, idx):
         files = self.filter_files()
         file_idx = idx // self.augments_per_item
@@ -203,6 +202,11 @@ class MeshDataset(Dataset):
                     new_vertices.append(new_vertex)
                     vertex_map[vertex_index] = len(new_vertices) - 1
                 new_face.append(vertex_map[vertex_index])
+            
+            # Cyclically permute indices to place the lowest index first
+            min_index_position = new_face.index(min(new_face))
+            new_face = new_face[min_index_position:] + new_face[:min_index_position]
+            
             new_faces.append(new_face)
 
         return self.augment_mesh(
