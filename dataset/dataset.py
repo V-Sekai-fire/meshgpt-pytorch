@@ -137,7 +137,7 @@ class MeshDataset(Dataset):
         final_vertices = [(v - min_vals) / max_range for v in final_vertices]
 
         return (
-            torch.tensor(final_vertices, dtype=torch.float),
+            torch.from_numpy(np.array(final_vertices, dtype=np.float32)),
             base_mesh[1],
         )
 
