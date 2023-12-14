@@ -466,7 +466,7 @@ class MeshAutoencoder(Module):
         assert 'config' in pkg, 'model configs were not found in this saved checkpoint'
 
         if version.parse(__version__) != version.parse(pkg['version']):
-            self.print(f'loading saved mesh autoencoder at version {pkg["version"]}, but current package version is {__version__}')
+            print(f'loading saved mesh autoencoder at version {pkg["version"]}, but current package version is {__version__}')
 
         config = pickle.loads(pkg['config'])
         tokenizer = cls(**config)
