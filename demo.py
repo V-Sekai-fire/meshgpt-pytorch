@@ -10,19 +10,19 @@ from dataset.dataset import MeshDataset
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-dataset_directory = "dataset/blockmesh_test/blockmesh"
+dataset_directory = "dataset/unit_test"
 
 dataset = MeshDataset(dataset_directory)
 
-seq_len = 32112
+seq_len = len(dataset.__getitem__(0)[0]) * 12
 
 print(f"Sequence length: {seq_len}")
 
 run = wandb.init(
     project="meshgpt-pytorch",
     config={
-        "autoencoder_learning_rate": 0.001,
-        "transformer_learning_rate": 0.001,
+        "autoencoder_learning_rate": 0.2,
+        "transformer_learning_rate": 0.2,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
         "num_train_steps": 3000,
@@ -32,12 +32,12 @@ run = wandb.init(
         "grad_accum_every": 1,
         "checkpoint_every": 40,
         "device": str(device),
-        "autoencoder_train": 5,
-        "transformer_train": 5,
+        "autoencoder_train": 3,
+        "transformer_train": 3,
         "autoencoder": {
             "dim": 512,
-            "encoder_depth": 6,
-            "decoder_depth": 6,
+            "encoder_depth": 12,
+            "decoder_depth": 12,
             "num_discrete_coors": 128,
         },
         "dataset_size": dataset.__len__(),

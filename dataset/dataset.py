@@ -19,7 +19,7 @@ class MeshDataset(Dataset):
         self.folder_path = folder_path
         self.file_list = os.listdir(folder_path)
         self.supported_formats = (".glb", ".gltf")
-        self.augments_per_item = 250
+        self.augments_per_item = 5000
         self.seed = 42
 
     @staticmethod
