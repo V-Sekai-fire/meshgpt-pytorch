@@ -151,11 +151,14 @@ class MeshDataset(Dataset):
             all_faces.extend(faces)
             all_vertices.extend(vertices)
 
+        # Convert all_vertices to a numpy array for easier manipulation
+        all_vertices = np.array(all_vertices)
+
         # Sort all the vertices based on their y-coordinate, then z-coordinate, then x-coordinate
-        sorted_vertices = sorted(range(len(all_vertices)), key=lambda k: (all_vertices[k][1], all_vertices[k][2], all_vertices[k][0]))
+        sorted_indices = np.lexsort((all_vertices[:,0], all_vertices[:,2], all_vertices[:,1]))
 
         # Create a map from old vertex index to new one
-        vertex_map = {old: new for new, old in enumerate(sorted_vertices)}
+        vertex_map = {old: new for new, old in enumerate(sorted_indices)}
 
         # Now create new_faces with updated vertex indices
         new_faces = []
@@ -165,12 +168,15 @@ class MeshDataset(Dataset):
             # Cyclically permute indices to place the lowest index first
             min_index_position = new_face.index(min(new_face))
             new_face = new_face[min_index_position:] + new_face[:min_index_position]
-            
+            new_face.sort()
+
             new_faces.append(new_face)
+
+        new_faces.sort(key=lambda face: min(face))
 
         return self.augment_mesh(
             (
-                torch.tensor([all_vertices[i] for i in sorted_vertices], dtype=torch.float),
+                torch.tensor([all_vertices[i] for i in sorted_indices], dtype=torch.float),
                 torch.tensor(new_faces, dtype=torch.long),
             ),
             self.augments_per_item,
