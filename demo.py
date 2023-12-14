@@ -23,7 +23,7 @@ run = wandb.init(
         "num_train_steps": 3000,
         "num_transformer_train_steps": 1000,
         "warmup_steps": 1000,
-        "batch_size": 2,
+        "batch_size": 8,
         "grad_accum_every": 1,
         "checkpoint_every": 40,
         "device": str(device),
