@@ -421,14 +421,13 @@ class MeshAutoencoder(Module):
             )
 
         self.pad_id = pad_id # for variable lengthed faces, padding quantized ids will be set to this value
-
+        
         self.project_codebook_out = nn.Linear(dim_codebook * 3, dim)
 
         self.decoders = ModuleList([])
 
         for _ in range(decoder_depth):
             resnet_block = ResnetBlock(dim)
-
             self.decoders.append(resnet_block)
 
         self.to_coor_logits = nn.Sequential(
