@@ -32,8 +32,8 @@ run = wandb.init(
         "grad_accum_every": 1,
         "checkpoint_every": 40,
         "device": str(device),
-        "autoencoder_train": 2,
-        "transformer_train": 2,
+        "autoencoder_train": 10,
+        "transformer_train": 10,
         "autoencoder": {
             "dim": 512,
             "encoder_depth": 12,

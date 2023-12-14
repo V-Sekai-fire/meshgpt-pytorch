@@ -97,13 +97,15 @@ class MeshDataset(Dataset):
     def __len__(self):
         return len(self.filter_files()) * self.augments_per_item
 
-
     def augment_mesh(self, base_mesh, augment_count, augment_idx):
         # Set the random seed for reproducibility
         random.seed(self.seed + augment_count * augment_idx + augment_idx)
 
         # Generate a random scale factor
         scale = random.uniform(0.8, 1.2)
+
+        # Generate a random translation vector with small values within [-1, 1] bounds
+        translation = [random.uniform(-0.03, 0.03) for _ in range(3)]
 
         vertices = base_mesh[0]
 
@@ -120,17 +122,13 @@ class MeshDataset(Dataset):
             [v[i] * scale for i in range(3)] for v in translated_vertices
         ]
 
-        # Generate a random rotation matrix
-        rotation = R.from_euler("y", random.uniform(-180, 180), degrees=True)
-
-        # Apply the transformations to each vertex of the object
-        new_vertices = [
-            (np.dot(rotation.as_matrix(), np.array(v))).tolist()
-            for v in scaled_vertices
+        # Apply the random jitter (translation) to the scaled vertices
+        jittered_vertices = [
+            [v[i] + translation[i] for i in range(3)] for v in scaled_vertices
         ]
 
-        # Translate the vertices back so that the centroid is at its original position
-        final_vertices = [[v[i] + centroid[i] for i in range(3)] for v in new_vertices]
+        # Translate the jittered vertices back so that the centroid is at its approximate original position
+        final_vertices = [[v[i] + centroid[i] for i in range(3)] for v in jittered_vertices]
 
         # Normalize uniformly to fill [-1, 1]
         min_vals = np.min(final_vertices, axis=0)
@@ -142,6 +140,7 @@ class MeshDataset(Dataset):
             torch.from_numpy(np.array(final_vertices, dtype=np.float32)),
             base_mesh[1],
         )
+
 
     def __getitem__(self, idx):
         files = self.filter_files()
