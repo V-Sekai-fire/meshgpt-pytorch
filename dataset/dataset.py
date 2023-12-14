@@ -246,7 +246,7 @@ if __name__ == "__main__":
 
     for i in range(1, 10):
         mesh = [tensor.tolist() for tensor in dataset.__getitem__(i)]
-        dataset.convert_to_glb(mesh, f"unit_test/mesh_{str(i).zfill(2)}.glb")
+        dataset.convert_to_glb(mesh, f"unit_augment/mesh_{str(i).zfill(2)}.glb")
 
     for i in range(1, 2):
         mesh = [tensor.tolist() for tensor in dataset.__getitem__(i)]
