@@ -32,8 +32,8 @@ run = wandb.init(
         "grad_accum_every": 1,
         "checkpoint_every": 40,
         "device": str(device),
-        "autoencoder_train": 3,
-        "transformer_train": 3,
+        "autoencoder_train": 2,
+        "transformer_train": 2,
         "autoencoder": {
             "dim": 512,
             "encoder_depth": 12,
@@ -45,27 +45,17 @@ run = wandb.init(
 )
 
 load_from_checkpoint = True
-checkpoint_path = "checkpoints/mesh-autoencoder.ckpt.27.pt"
 autoencoder = None
 num_train_steps = None
-if load_from_checkpoint and os.path.isfile(checkpoint_path):
-    autoencoder = MeshAutoencoder(
-        dim=run.config.autoencoder["dim"],
-        encoder_depth=run.config.autoencoder["encoder_depth"],
-        decoder_depth=run.config.autoencoder["decoder_depth"],
-        num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
-    ).to(device)
-    autoencoder.init_and_load_from(checkpoint_path)
-    print(f"Loaded checkpoint '{checkpoint_path}'")
-    num_train_steps = wandb.config.num_train_steps
-else:
-    autoencoder = MeshAutoencoder(
-        dim=run.config.autoencoder["dim"],
-        encoder_depth=run.config.autoencoder["encoder_depth"],
-        decoder_depth=run.config.autoencoder["decoder_depth"],
-        num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
-    ).to(device)  
-    num_train_steps = wandb.config.num_train_steps
+
+autoencoder = MeshAutoencoder(
+    num_quantizers=1,
+    dim=run.config.autoencoder["dim"],
+    encoder_depth=run.config.autoencoder["encoder_depth"],
+    decoder_depth=run.config.autoencoder["decoder_depth"],
+    num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
+).to(device)  
+num_train_steps = wandb.config.num_train_steps
 
 trainer = MeshAutoencoderTrainer(
     autoencoder,
@@ -79,6 +69,7 @@ trainer = MeshAutoencoderTrainer(
     use_wandb_tracking=True,
 )
 trainer.train(run.config.autoencoder_train)
+autoencoder.save(f"checkpoints/autoencoder.pt", overwrite = True)
 
 from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
 
@@ -104,7 +95,6 @@ transformer_trainer.train(run.config.transformer_train)
 
 continuous_coors = transformer.generate()
 
-# Move the tensor to CPU before converting to a list
 continuous_coors_list = continuous_coors.cpu().tolist()
 
 import json
