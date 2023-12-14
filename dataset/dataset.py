@@ -97,7 +97,9 @@ class MeshDataset(Dataset):
     def __len__(self):
         return len(self.filter_files()) * self.augments_per_item
 
+
     def augment_mesh(self, base_mesh, augment_count, augment_idx):
+        # Set the random seed for reproducibility
         random.seed(self.seed + augment_count * augment_idx + augment_idx)
 
         # Generate a random scale factor
@@ -130,11 +132,11 @@ class MeshDataset(Dataset):
         # Translate the vertices back so that the centroid is at its original position
         final_vertices = [[v[i] + centroid[i] for i in range(3)] for v in new_vertices]
 
-        # Normalize uniformly to fill [0, 1]
+        # Normalize uniformly to fill [-1, 1]
         min_vals = np.min(final_vertices, axis=0)
         max_vals = np.max(final_vertices, axis=0)
-        max_range = np.max(max_vals - min_vals)
-        final_vertices = [(v - min_vals) / max_range for v in final_vertices]
+        max_range = np.max(max_vals - min_vals) / 2
+        final_vertices = [[(component - c) / max_range for component, c in zip(v, centroid)] for v in final_vertices]
 
         return (
             torch.from_numpy(np.array(final_vertices, dtype=np.float32)),
