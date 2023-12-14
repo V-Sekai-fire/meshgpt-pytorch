@@ -14,6 +14,10 @@ dataset_directory = "dataset/unit_test"
 
 dataset = MeshDataset(dataset_directory)
 
+seq_len = len(dataset.__getitem__(0)[0]) * 6
+
+print(f"Sequence length: {seq_len}")
+
 run = wandb.init(
     project="meshgpt-pytorch",
     config={
@@ -76,10 +80,6 @@ trainer = MeshAutoencoderTrainer(
 trainer.train(run.config.autoencoder_train)
 
 from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
-
-seq_len = dataset.__getitem__(0)[1].size() * 3
-
-print(f"Sequence length: {seq_len}")
 
 transformer = MeshTransformer(
     autoencoder,
