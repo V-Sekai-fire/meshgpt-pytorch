@@ -10,11 +10,11 @@ from dataset.dataset import MeshDataset
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-dataset_directory = "dataset/unit_test"
+dataset_directory = "dataset/blockmesh_test/blockmesh"
 
 dataset = MeshDataset(dataset_directory)
 
-seq_len = len(dataset.__getitem__(0)[0]) * 12
+seq_len = 32112
 
 print(f"Sequence length: {seq_len}")
 
