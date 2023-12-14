@@ -101,7 +101,7 @@ class MeshDataset(Dataset):
         random.seed(self.seed + augment_count * augment_idx + augment_idx)
 
         # Generate a random scale factor
-        scale = random.uniform(0.8, 1.2)
+        scale = random.uniform(0.9, 1.1)
 
         vertices = base_mesh[0]
 
@@ -119,7 +119,7 @@ class MeshDataset(Dataset):
         ]
 
         # Generate a random rotation matrix
-        rotation = R.from_euler("y", random.uniform(-180, 180), degrees=True)
+        rotation = R.from_euler("y", random.uniform(-90, 90), degrees=True)
 
         # Apply the transformations to each vertex of the object
         new_vertices = [
