@@ -170,11 +170,22 @@ class MeshDataset(Dataset):
         all_faces = []
         all_vertices = []
 
+        bbox = scene.bounds
+
+        max_dim = np.max(bbox[1] - bbox[0])
+
+        scale_factor = 1 / max_dim
+
         for mesh_idx, (name, geometry) in enumerate(scene.geometry.items()):
             vertex_indices = {}
 
             try:
                 geometry.apply_transform(scene.graph.get(name)[0])
+                geometry.apply_scale(scale_factor)
+                
+                # Recenter the geometry
+                min_z = np.min(geometry.vertices[:, 2])
+                geometry.vertices -= [bbox[0][0]/2, bbox[0][1]/2, min_z]
             except Exception as e:
                 pass
 
@@ -198,6 +209,8 @@ class MeshDataset(Dataset):
 
             all_faces.extend(faces)
             all_vertices.extend(vertices)
+
+        all_vertices = [(v[0]*scale_factor, v[1]*scale_factor, v[2]*scale_factor) for v in all_vertices]
 
         all_faces.sort(
             key=functools.cmp_to_key(
@@ -237,9 +250,9 @@ if __name__ == "__main__":
     with open("unit_test/mesh_00.json", "wb") as f:
         f.write(json.dumps(mesh_00).encode())
 
-    # for i in range(1, 10):
-    #     mesh = [tensor.tolist() for tensor in dataset.__getitem__(i)]
-    #     dataset.convert_to_glb(mesh, f"unit_test/mesh_{str(i).zfill(2)}.glb")
+    for i in range(1, 10):
+        mesh = [tensor.tolist() for tensor in dataset.__getitem__(i)]
+        dataset.convert_to_glb(mesh, f"unit_test/mesh_{str(i).zfill(2)}.glb")
 
     for i in range(1, 2):
         mesh = [tensor.tolist() for tensor in dataset.__getitem__(i)]
