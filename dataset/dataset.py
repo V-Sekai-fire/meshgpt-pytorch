@@ -223,7 +223,9 @@ if __name__ == "__main__":
         f.write(json.dumps(mesh_00).encode())
 
     for i in range(0, 10):
-        mesh = [tensor.tolist() for tensor in dataset.__getitem__(i)]
+        mesh = [tensor.tolist() for tensor in dataset.__getitem__(i)]        
+        with open(f"unit_augment/mesh_{str(i).zfill(2)}.json", "wb") as f:
+            f.write(json.dumps(mesh).encode())
         dataset.convert_to_glb(mesh, f"unit_augment/mesh_{str(i).zfill(2)}.glb")
 
     for i in range(1, 2):

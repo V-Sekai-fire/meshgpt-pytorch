@@ -17,13 +17,13 @@ dataset = MeshDataset(dataset_directory)
 run = wandb.init(
     project="meshgpt-pytorch",
     config={
-        "learning_rate": 1e-3,
+        "learning_rate": 1e-4,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
         "num_train_steps": 2000,
         "num_transformer_train_steps": 100,
         "warmup_steps": 1000,
-        "batch_size": 192,
+        "batch_size": 128,
         "grad_accum_every": 1,
         "checkpoint_every": 20,
         "device": str(device),
@@ -76,7 +76,7 @@ if True:
     transformer = MeshTransformer(
         autoencoder,
         dim=512,
-        max_seq_len=3384,
+        max_seq_len=384,
     ).to(device)
 
     transformer_trainer = MeshTransformerTrainer(
