@@ -23,11 +23,11 @@ run = wandb.init(
         "num_train_steps": 3000,
         "num_transformer_train_steps": 1000,
         "warmup_steps": 1000,
-        "batch_size": 4,
+        "batch_size": 1,
         "grad_accum_every": 1,
         "checkpoint_every": 40,
         "device": str(device),
-        "autoencoder_train": 40,
+        "autoencoder_train": 80,
         "autoencoder": {
             "dim": 512,
             "encoder_depth": 6,
