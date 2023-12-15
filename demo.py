@@ -117,3 +117,12 @@ faces = [[i, i + 1, i + 2] for i in range(0, len(vertices), 3)]
 
 # Assuming dataset is an instance of a class that has a method convert_to_glb
 dataset.convert_to_glb((vertices, faces), "output.glb")
+
+codes = transformer.generate(return_codes = True)
+
+codes_list = codes.cpu().tolist()
+
+import json
+
+with open("output_codes.json", "w") as f:
+    json.dump(codes_list, f)
