@@ -15,11 +15,11 @@ from scipy.spatial.transform import Rotation as R
 
 
 class MeshDataset(Dataset):
-    def __init__(self, folder_path):
+    def __init__(self, folder_path, augments_per_item):
         self.folder_path = folder_path
         self.file_list = os.listdir(folder_path)
         self.supported_formats = (".glb", ".gltf")
-        self.augments_per_item = 10
+        self.augments_per_item = augments_per_item
         self.seed = 42
 
     @staticmethod
@@ -96,7 +96,6 @@ class MeshDataset(Dataset):
 
     def __len__(self):
         return len(self.filter_files()) * self.augments_per_item
-
 
     def augment_mesh(self, base_mesh, augment_count, augment_idx):
         # Set the random seed for reproducibility
@@ -204,13 +203,13 @@ class MeshDataset(Dataset):
                     new_vertices.append(new_vertex)
                     vertex_map[vertex_index] = len(new_vertices) - 1
                 new_face.append(vertex_map[vertex_index])
-            
+
             # Find the index of the minimum vertex
             min_index = new_face.index(min(new_face))
-            
+
             # Rotate the list so that it starts with the minimum vertex
             new_face = new_face[min_index:] + new_face[:min_index]
-            
+
             new_faces.append(new_face)
 
         # Sort the faces based on their first vertex
@@ -227,7 +226,7 @@ class MeshDataset(Dataset):
 
 
 if __name__ == "__main__":
-    dataset = MeshDataset("unit_test")
+    dataset = MeshDataset("unit_test", 10)
 
     mesh_00 = [tensor.tolist() for tensor in dataset.__getitem__(0)]
 

@@ -12,7 +12,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 dataset_directory = "dataset/unit_test"
 
-dataset = MeshDataset(dataset_directory)
+dataset = MeshDataset(dataset_directory, 4)
 
 seq_len = len(dataset.__getitem__(0)[0]) * 12
 
@@ -32,7 +32,7 @@ run = wandb.init(
         "grad_accum_every": 1,
         "checkpoint_every": 40,
         "device": str(device),
-        "autoencoder_train": 1000,
+        "autoencoder_train": 2000,
         "transformer_train": 500,
         "autoencoder": {
             "dim": 512,
