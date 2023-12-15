@@ -30,7 +30,7 @@ run = wandb.init(
     config={
         "seed": 42,
         "get_max_face_count": dataset.get_max_face_count(),
-        "autoencoder_learning_rate": 0.05,
+        "autoencoder_learning_rate": 0.1,
         "transformer_learning_rate": 0.1,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
