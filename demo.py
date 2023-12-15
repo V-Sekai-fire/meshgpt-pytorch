@@ -126,13 +126,31 @@ vertices = [vertex for sublist in flat_list for vertex in sublist]
 faces = [[i, i + 1, i + 2] for i in range(0, len(vertices), 3)]
 
 dataset.convert_to_glb((vertices, faces), "output.glb")
+dataset.convert_to_obj((vertices, faces), "output.obj")
 
-vertex = np.array(vertices, dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
-face = np.array(faces, dtype=[('vertex_indices', 'i4', (3,))])
+def encode_to_pua(codes):
+    flat_codes = [item for sublist in codes for subsublist in sublist for item in subsublist]
+    return ''.join(chr(code + 0xE000) for code in flat_codes)
 
-from plyfile import PlyData, PlyElement
+encoded_codes = encode_to_pua(codes_list)
 
-vertex_element = PlyElement.describe(vertex, 'vertex')
-face_element = PlyElement.describe(face, 'face')
+with open('output.obj', 'r') as file:
+    obj_contents = file.read()
 
-PlyData([vertex_element, face_element]).write('output.ply')
+new_data = [[
+    {"role": "system", "content": "This assistant can understand 3D models using the meshgpt-pytorch Unicode plane 15 codebook for 16384 triangles and the .ply 3d format."},
+    {"role": "user", "content": f"{encoded_codes}"},
+    {"role": "assistant", "content": f"{obj_contents}"}
+]]
+data = []
+try:
+    with open('chatml.jsonl', 'r') as f:
+        data = [json.loads(line) for line in f]
+except FileNotFoundError:
+    print("The file 'chatml.jsonl' does not exist.")
+
+data = new_data + data
+
+with open('chatml.jsonl', 'w', encoding='utf-8') as f:
+    for item in data:
+        f.write(json.dumps(item, ensure_ascii=False) + '\n')

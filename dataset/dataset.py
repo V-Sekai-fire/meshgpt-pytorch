@@ -64,6 +64,19 @@ class MeshDataset(Dataset):
             f.write(scene.export(file_type="glb"))
 
     @staticmethod
+    def convert_to_obj(json_data, output_file_path):
+        scene = trimesh.Scene()
+        vertices = np.array(json_data[0])
+        faces = np.array(json_data[1])
+        if faces.max() >= len(vertices):
+            raise ValueError(
+                f"Face index {faces.max()} exceeds number of vertices {len(vertices)}"
+            )
+        mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+        scene.add_geometry(mesh)
+        with open(output_file_path, "w") as f:
+            f.write(scene.export(file_type="obj"))
+    @staticmethod
     def compare_json(json_data1, json_data2):
         if len(json_data1) != len(json_data2):
             return False
