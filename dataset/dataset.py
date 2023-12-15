@@ -204,6 +204,7 @@ class MeshDataset(Dataset):
                     new_vertices.append(new_vertex)
                     vertex_map[vertex_index] = len(new_vertices) - 1
                 new_face.append(vertex_map[vertex_index])
+            new_face.sort()
             new_faces.append(new_face)
 
         return self.augment_mesh(
