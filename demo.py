@@ -10,7 +10,7 @@ from dataset.dataset import MeshDataset
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-dataset_directory = "dataset/blockmesh_test/blockmesh"
+dataset_directory = "dataset/unit_test"
 
 data_augment = 4
 
