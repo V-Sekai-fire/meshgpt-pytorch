@@ -10,22 +10,23 @@ from dataset.dataset import MeshDataset
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-dataset_directory = "dataset/unit_test"
+dataset_directory = "dataset/blockmesh_test/blockmesh"
 
-data_augment = 4
+data_augment = 1
 
 dataset = MeshDataset(dataset_directory, data_augment)
 
 run = wandb.init(
     project="meshgpt-pytorch",
     config={
+        "get_max_face_count": dataset.get_max_face_count(),
         "autoencoder_learning_rate": 0.1,
         "transformer_learning_rate": 0.1,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
         "data_augment": data_augment,
-        "autoencoder_train": 2000,
-        "transformer_train": 500,
+        "autoencoder_train": 1,
+        "transformer_train": 1,
         "warmup_steps": 500,
         "batch_size": 1,
         "grad_accum_every": 1,
@@ -40,7 +41,9 @@ run = wandb.init(
         "dataset_size": dataset.__len__(),
     },
 )
-seq_len = len(dataset.__getitem__(0)[0]) * 12
+
+seq_len = dataset.get_max_face_count() * 3
+seq_len = ((seq_len + 2) // 3) * 3
 
 print(f"Sequence length: {seq_len}")
 

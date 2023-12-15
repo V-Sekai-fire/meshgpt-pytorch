@@ -37,6 +37,29 @@ class MeshDataset(Dataset):
 
         return 0
 
+
+    def get_max_face_count(self):
+        max_faces = 0
+        files = self.filter_files()
+        files = sorted(self.filter_files())
+        for file in files:
+            file_path = os.path.join(self.folder_path, file)
+            scene = trimesh.load(file_path, force="scene")
+            total_faces_in_file = 0
+            for _, geometry in scene.geometry.items():
+                try:
+                    geometry.apply_transform(scene.graph.get(_)[0])
+                except Exception as e:
+                    pass
+
+                num_faces = len(geometry.faces)
+                total_faces_in_file += num_faces
+
+            if total_faces_in_file > max_faces:
+                max_faces = total_faces_in_file
+
+        return max_faces
+
     def filter_files(self):
         filtered_list = [
             file for file in self.file_list if file.endswith(self.supported_formats)
