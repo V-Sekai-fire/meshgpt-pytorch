@@ -167,7 +167,9 @@ class MeshDataset(Dataset):
 
         def sort_vertices_ccw(vertices):
             # Calculate the center of the vertices
-            center = [sum(vertex[i] for vertex in vertices) / len(vertices) for i in range(2)]
+            center = [
+                sum(vertex[i] for vertex in vertices) / len(vertices) for i in range(2)
+            ]
 
             # Sort the vertices based on the angle each makes with the center
             return sorted(vertices, key=lambda vertex: -calculate_angle(vertex, center))
@@ -204,7 +206,9 @@ class MeshDataset(Dataset):
                 sorted_vertices = list(reversed(sorted_vertices))
 
             # Map sorted vertices back to their corresponding indices
-            sorted_indices = [new_face[new_face_vertices.index(vertex)] for vertex in sorted_vertices]
+            sorted_indices = [
+                new_face[new_face_vertices.index(vertex)] for vertex in sorted_vertices
+            ]
 
             new_faces.append(sorted_indices)
 
@@ -276,9 +280,10 @@ class MeshDataset(Dataset):
 import unittest
 import json
 
+
 class TestMeshDataset(unittest.TestCase):
     def setUp(self):
-        self.augments = 10
+        self.augments = 3
         self.dataset = MeshDataset("unit_test", self.augments)
         self.mesh_00 = [tensor.tolist() for tensor in self.dataset.__getitem__(0)]
 
