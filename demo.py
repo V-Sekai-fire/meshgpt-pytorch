@@ -144,7 +144,7 @@ new_data = [[
 ]]
 data = []
 try:
-    with open('chatml.jsonl', 'r') as f:
+    with open('chatml.jsonl', 'r', encoding='utf-8') as f:
         data = [json.loads(line) for line in f]
 except FileNotFoundError:
     print("The file 'chatml.jsonl' does not exist.")
