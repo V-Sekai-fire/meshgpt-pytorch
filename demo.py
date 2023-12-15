@@ -12,7 +12,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 dataset_directory = "dataset/unit_test"
 
-data_augment = 10000
+data_augment = 4
 
 dataset = MeshDataset(dataset_directory, data_augment)
 
@@ -24,10 +24,10 @@ run = wandb.init(
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
         "data_augment": data_augment,
-        "autoencoder_train": 3,
-        "transformer_train": 3,
+        "autoencoder_train": 2000,
+        "transformer_train": 500,
         "warmup_steps": 500,
-        "batch_size": 20,
+        "batch_size": 1,
         "grad_accum_every": 1,
         "checkpoint_every": 40,
         "device": str(device),
