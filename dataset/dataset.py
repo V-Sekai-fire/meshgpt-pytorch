@@ -128,7 +128,10 @@ class MeshDataset(Dataset):
         min_vals = np.min(final_vertices, axis=0)
         max_vals = np.max(final_vertices, axis=0)
         max_range = np.max(max_vals - min_vals) / 2
-        final_vertices = [[(component - c) / max_range for component, c in zip(v, centroid)] for v in final_vertices]
+        final_vertices = [
+            [(component - c) / max_range for component, c in zip(v, centroid)]
+            for v in final_vertices
+        ]
 
         return (
             torch.from_numpy(np.array(final_vertices, dtype=np.float32)),
@@ -207,7 +210,7 @@ class MeshDataset(Dataset):
 
         # Sort the faces based on their first vertex
         new_faces.sort(key=lambda x: x[0])
-        
+
         return self.augment_mesh(
             (
                 torch.tensor(new_vertices, dtype=torch.float),
@@ -218,27 +221,39 @@ class MeshDataset(Dataset):
         )
 
 
+import unittest
+import json
+from dataset import MeshDataset
+
+
+class TestMeshDataset(unittest.TestCase):
+    def setUp(self):
+        self.augments = 10
+        self.dataset = MeshDataset("unit_test", self.augments)
+        self.mesh_00 = [tensor.tolist() for tensor in self.dataset.__getitem__(0)]
+        with open("unit_test/mesh_00.json", "wb") as f:
+            f.write(json.dumps(self.mesh_00).encode())
+
+    def test_mesh_augmentation(self):
+        for i in range(self.augments):
+            mesh = [tensor.tolist() for tensor in self.dataset.__getitem__(i)]
+            with open(f"unit_augment/mesh_{str(i).zfill(2)}.json", "wb") as f:
+                f.write(json.dumps(mesh).encode())
+            self.dataset.convert_to_glb(
+                mesh, f"unit_augment/mesh_{str(i).zfill(2)}.glb"
+            )
+
+    def test_json_comparison(self):
+        i = 0
+        mesh = [tensor.tolist() for tensor in self.dataset.__getitem__(i)]
+        with open(f"mesh_00.json", "wb") as f:
+            f.write(json.dumps(mesh).encode())
+        self.assertEqual(
+            MeshDataset.compare_json(self.mesh_00, mesh),
+            True,
+            f"JSON data 00 and {str(i).zfill(2)} are different.",
+        )
+
+
 if __name__ == "__main__":
-    dataset = MeshDataset("unit_test", 10)
-
-    mesh_00 = [tensor.tolist() for tensor in dataset.__getitem__(0)]
-
-    with open("unit_test/mesh_00.json", "wb") as f:
-        f.write(json.dumps(mesh_00).encode())
-
-    for i in range(0, 10):
-        mesh = [tensor.tolist() for tensor in dataset.__getitem__(i)]
-        with open(f"unit_augment/mesh_{str(i).zfill(2)}.json", "wb") as f:
-            f.write(json.dumps(mesh).encode())
-        dataset.convert_to_glb(mesh, f"unit_augment/mesh_{str(i).zfill(2)}.glb")
-
-    for i in range(1, 2):
-        mesh = [tensor.tolist() for tensor in dataset.__getitem__(i)]
-
-        with open(f"unit_test/mesh_{str(i).zfill(2)}.json", "wb") as f:
-            f.write(json.dumps(mesh).encode())
-
-        if MeshDataset.compare_json(mesh_00, mesh):
-            print(f"JSON data 00 and {str(i).zfill(2)} are the same.")
-        else:
-            print(f"JSON data 00 and {str(i).zfill(2)} are different.")
+    unittest.main()
