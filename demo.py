@@ -27,7 +27,6 @@ run = wandb.init(
         "data_augment": data_augment,
         "autoencoder_train": 2000,
         "transformer_train": 500,
-        "warmup_steps": 500,
         "batch_size": 1,
         "grad_accum_every": 1,
         "checkpoint_every": 40,
@@ -65,7 +64,7 @@ trainer = MeshAutoencoderTrainer(
     batch_size=wandb.config.batch_size,
     grad_accum_every=wandb.config.grad_accum_every,
     checkpoint_every=wandb.config.checkpoint_every,
-    warmup_steps=wandb.config.warmup_steps,
+    warmup_steps=500, # Ignored?
     learning_rate=wandb.config.autoencoder_learning_rate,
     use_wandb_tracking=True,
 )
@@ -87,7 +86,7 @@ transformer_trainer = MeshTransformerTrainer(
     batch_size=wandb.config.batch_size,
     grad_accum_every=wandb.config.grad_accum_every,
     checkpoint_every=wandb.config.checkpoint_every,
-    warmup_steps=wandb.config.warmup_steps,
+    warmup_steps=500, # Ignored?
     learning_rate=wandb.config.transformer_learning_rate,
     use_wandb_tracking=True,
 )
