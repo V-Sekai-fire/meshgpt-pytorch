@@ -15,11 +15,12 @@ from scipy.spatial.transform import Rotation as R
 
 
 class MeshDataset(Dataset):
-    def __init__(self, folder_path):
+    def __init__(self, folder_path, multiple=1):
         self.folder_path = folder_path
         self.file_list = os.listdir(folder_path)
         self.supported_formats = (".glb", ".gltf")
-        self.augments_per_item = 4000
+        self.augments_per_item = 2
+        self.multiple = multiple
         self.seed = 42
 
     def filter_files(self):
@@ -62,7 +63,7 @@ class MeshDataset(Dataset):
         return filtered_list
 
     def __len__(self):
-        return len(self.filter_files()) * self.augments_per_item
+        return len(self.filter_files()) * self.augments_per_item * multiple
 
     def augment_mesh(self, base_mesh, augment_count, augment_idx):
         # Set the random seed for reproducibility
@@ -95,13 +96,18 @@ class MeshDataset(Dataset):
         ]
 
         # Translate the jittered vertices back so that the centroid is at its approximate original position
-        final_vertices = [[v[i] + centroid[i] for i in range(3)] for v in jittered_vertices]
+        final_vertices = [
+            [v[i] + centroid[i] for i in range(3)] for v in jittered_vertices
+        ]
 
         # Normalize uniformly to fill [-1, 1]
         min_vals = np.min(final_vertices, axis=0)
         max_vals = np.max(final_vertices, axis=0)
         max_range = np.max(max_vals - min_vals) / 2
-        final_vertices = [[(component - c) / max_range for component, c in zip(v, centroid)] for v in final_vertices]
+        final_vertices = [
+            [(component - c) / max_range for component, c in zip(v, centroid)]
+            for v in final_vertices
+        ]
 
         return (
             torch.from_numpy(np.array(final_vertices, dtype=np.float32)),
@@ -110,8 +116,8 @@ class MeshDataset(Dataset):
 
     def __getitem__(self, idx):
         files = self.filter_files()
-        file_idx = idx // self.augments_per_item
-        augment_idx = idx % self.augments_per_item
+        file_idx = idx // (self.augments_per_item * self.multiple)
+        augment_idx = idx % (self.augments_per_item * self.multiple)
         file_path = os.path.join(self.folder_path, files[file_idx])
 
         _, file_extension = os.path.splitext(file_path)
@@ -151,11 +157,13 @@ class MeshDataset(Dataset):
             all_faces.extend(faces)
             all_vertices.extend(vertices)
 
-       # Convert all_vertices to a numpy array for easier manipulation
+        # Convert all_vertices to a numpy array for easier manipulation
         all_vertices = np.array(all_vertices)
 
         # Sort all the vertices based on their y-coordinate, then z-coordinate, then x-coordinate
-        sorted_indices = np.lexsort((all_vertices[:,0], all_vertices[:,2], all_vertices[:,1]))
+        sorted_indices = np.lexsort(
+            (all_vertices[:, 0], all_vertices[:, 2], all_vertices[:, 1])
+        )
 
         # Create a map from old vertex index to new one
         vertex_map = {old: new for new, old in enumerate(sorted_indices)}
@@ -164,7 +172,7 @@ class MeshDataset(Dataset):
         new_faces = []
         for face in all_faces:
             new_face = [vertex_map[vertex_index] for vertex_index in face]
-            
+
             # Sort the indices within each face
             new_face.sort()
 
@@ -181,13 +189,13 @@ class MeshDataset(Dataset):
                 torch.from_numpy(sorted_vertices).float(),
                 torch.tensor(new_faces, dtype=torch.long),
             ),
-            self.augments_per_item,
+            self.augments_per_item * self.multiple,
             augment_idx,
         )
-        
+
 
 if __name__ == "__main__":
-    dataset = MeshDataset("unit_test")
+    dataset = MeshDataset("unit_test", 1)
 
     mesh_00 = [tensor.tolist() for tensor in dataset.__getitem__(0)]
 
