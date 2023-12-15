@@ -45,7 +45,7 @@ run = wandb.init(
             "dim": 512,
             "encoder_depth": 6,
             "decoder_depth": 6,
-            "num_discrete_coors": 256,
+            "num_discrete_coors": 128,
         },
         "dataset_size": dataset.__len__(),
     },
