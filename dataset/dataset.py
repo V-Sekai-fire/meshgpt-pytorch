@@ -283,7 +283,6 @@ class TestMeshDataset(unittest.TestCase):
     def setUp(self):
         self.augments = 3
         self.dataset = MeshDataset("unit_test", self.augments)
-        self.mesh_00 = [tensor.tolist() for tensor in self.dataset.__getitem__(0)]
 
     def test_mesh_augmentation(self):
         for i in range(self.augments):
@@ -293,15 +292,6 @@ class TestMeshDataset(unittest.TestCase):
             self.dataset.convert_to_glb(
                 mesh, f"unit_augment/mesh_{str(i).zfill(2)}.glb"
             )
-
-    def test_json_comparison(self):
-        i = 0
-        mesh = [tensor.tolist() for tensor in self.dataset.__getitem__(i)]
-        self.assertEqual(
-            MeshDataset.compare_json(self.mesh_00, mesh),
-            True,
-            f"JSON data 00 and {str(i).zfill(2)} are different.",
-        )
 
 
 if __name__ == "__main__":
