@@ -204,10 +204,17 @@ class MeshDataset(Dataset):
                     new_vertices.append(new_vertex)
                     vertex_map[vertex_index] = len(new_vertices) - 1
                 new_face.append(vertex_map[vertex_index])
-            new_face.sort()
+            
+            # Find the index of the minimum vertex
+            min_index = new_face.index(min(new_face))
+            
+            # Rotate the list so that it starts with the minimum vertex
+            new_face = new_face[min_index:] + new_face[:min_index]
+            
             new_faces.append(new_face)
 
-        new_faces.sort()
+        # Sort the faces based on their first vertex
+        new_faces.sort(key=lambda x: x[0])
         
         return self.augment_mesh(
             (
