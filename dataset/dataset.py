@@ -63,7 +63,7 @@ class MeshDataset(Dataset):
         return filtered_list
 
     def __len__(self):
-        return len(self.filter_files()) * self.augments_per_item * multiple
+        return len(self.filter_files()) * self.augments_per_item * self.multiple
 
     def augment_mesh(self, base_mesh, augment_count, augment_idx):
         # Set the random seed for reproducibility
