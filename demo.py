@@ -1,10 +1,19 @@
-import torch, wandb, os
+import torch, wandb, os, random
 import numpy as np
 
 from meshgpt_pytorch import (
     MeshAutoencoder,
     MeshAutoencoderTrainer,
 )
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    
 
 from dataset.dataset import MeshDataset
 
@@ -19,14 +28,15 @@ dataset = MeshDataset(dataset_directory, data_augment)
 run = wandb.init(
     project="meshgpt-pytorch",
     config={
+        "seed": 42,
         "get_max_face_count": dataset.get_max_face_count(),
         "autoencoder_learning_rate": 0.1,
         "transformer_learning_rate": 0.1,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
         "data_augment": data_augment,
-        "autoencoder_train": 300,
-        "transformer_train": 375,
+        "autoencoder_train": 1,
+        "transformer_train": 1,
         "batch_size": 1,
         "grad_accum_every": 1,
         "checkpoint_every": 40,
@@ -40,6 +50,8 @@ run = wandb.init(
         "dataset_size": dataset.__len__(),
     },
 )
+
+set_seed(wandb.config.seed)
 
 seq_len = dataset.get_max_face_count() * 3
 seq_len = ((seq_len + 2) // 3) * 3
@@ -93,32 +105,7 @@ transformer_trainer = MeshTransformerTrainer(
 
 transformer_trainer.train(run.config.transformer_train)
 
-continuous_coors = transformer.generate()
-
-continuous_coors_list = continuous_coors.cpu().tolist()
-
-import json
-
-with open("continuous_coors.json", "w") as f:
-    json.dump(continuous_coors.tolist(), f)
-
-if False:
-    import json
-
-    with open("continuous_coors.json", "r") as f:
-        continuous_coors_list = json.load(f)
-
-flat_list = [item for sublist in continuous_coors_list for item in sublist]
-
-vertices = [vertex for sublist in flat_list for vertex in sublist]
-# print("Vertices:", vertices)
-
-faces = [[i, i + 1, i + 2] for i in range(0, len(vertices), 3)]
-
-# Assuming dataset is an instance of a class that has a method convert_to_glb
-dataset.convert_to_glb((vertices, faces), "output.glb")
-
-codes = transformer.generate(return_codes = True)
+codes, continuous_coors = transformer.generate(return_codes = True)
 
 codes_list = codes.cpu().tolist()
 
@@ -126,3 +113,26 @@ import json
 
 with open("output_codes.json", "w") as f:
     json.dump(codes_list, f)
+    
+continuous_coors_list = continuous_coors.cpu().tolist()
+
+with open("continuous_coors.json", "w") as f:
+    json.dump(continuous_coors.tolist(), f)
+
+flat_list = [item for sublist in continuous_coors_list for item in sublist]
+
+vertices = [vertex for sublist in flat_list for vertex in sublist]
+
+faces = [[i, i + 1, i + 2] for i in range(0, len(vertices), 3)]
+
+dataset.convert_to_glb((vertices, faces), "output.glb")
+
+vertex = np.array(vertices, dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
+face = np.array(faces, dtype=[('vertex_indices', 'i4', (3,))])
+
+from plyfile import PlyData, PlyElement
+
+vertex_element = PlyElement.describe(vertex, 'vertex')
+face_element = PlyElement.describe(face, 'face')
+
+PlyData([vertex_element, face_element]).write('output.ply')

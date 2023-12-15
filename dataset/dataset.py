@@ -20,7 +20,6 @@ class MeshDataset(Dataset):
         self.file_list = os.listdir(folder_path)
         self.supported_formats = (".glb", ".gltf")
         self.augments_per_item = augments_per_item
-        self.seed = 42
 
     def get_max_face_count(self):
         max_faces = 0
@@ -223,9 +222,6 @@ class MeshDataset(Dataset):
 
 
     def augment_mesh(self, base_mesh, augment_count, augment_idx):
-        # Set the random seed for reproducibility
-        random.seed(self.seed + augment_count * augment_idx + augment_idx)
-
         vertices = base_mesh[0]
 
         # Calculate the centroid of the object
