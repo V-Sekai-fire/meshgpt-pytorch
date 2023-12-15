@@ -247,6 +247,7 @@ class MeshDataset(Dataset):
 
             new_faces.append(sorted_indices)
 
+        new_faces = sorted(new_faces)
 
         return self.augment_mesh(
             (
