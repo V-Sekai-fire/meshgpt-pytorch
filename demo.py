@@ -12,7 +12,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 dataset_directory = "dataset/unit_test"
 
-dataset = MeshDataset(dataset_directory, 2000)
+dataset = MeshDataset(dataset_directory)
 
 seq_len = len(dataset.__getitem__(0)[0]) * 12
 
