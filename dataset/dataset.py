@@ -76,6 +76,7 @@ class MeshDataset(Dataset):
         scene.add_geometry(mesh)
         with open(output_file_path, "w") as f:
             f.write(scene.export(file_type="obj"))
+
     @staticmethod
     def compare_json(json_data1, json_data2):
         if len(json_data1) != len(json_data2):
@@ -233,7 +234,6 @@ class MeshDataset(Dataset):
             augment_idx,
         )
 
-
     def augment_mesh(self, base_mesh, augment_count, augment_idx):
         vertices = base_mesh[0]
 
@@ -272,7 +272,6 @@ class MeshDataset(Dataset):
             torch.from_numpy(np.array(final_vertices, dtype=np.float32)),
             base_mesh[1],
         )
-
 
 
 import unittest
