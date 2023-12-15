@@ -36,8 +36,8 @@ run = wandb.init(
         "transformer_train": 500,
         "autoencoder": {
             "dim": 512,
-            "encoder_depth": 12,
-            "decoder_depth": 12,
+            "encoder_depth": 6,
+            "decoder_depth": 6,
             "num_discrete_coors": 128,
         },
         "dataset_size": dataset.__len__(),
