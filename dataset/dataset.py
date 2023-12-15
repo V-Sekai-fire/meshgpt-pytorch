@@ -214,6 +214,19 @@ class MeshDataset(Dataset):
         new_faces = []
         vertex_map = {}
 
+        import math
+
+        def calculate_angle(point, center):
+            # Calculate the angle between the point and the horizontal line through the center
+            return math.atan2(point[1] - center[1], point[0] - center[0])
+
+        def sort_vertices_ccw(vertices):
+            # Calculate the center of the vertices
+            center = [sum(vertex[i] for vertex in vertices) / len(vertices) for i in range(2)]
+
+            # Sort the vertices based on the angle each makes with the center
+            return sorted(vertices, key=lambda vertex: -calculate_angle(vertex, center))
+
         for face in all_faces:
             new_face = []
             for vertex_index in face:
@@ -223,16 +236,17 @@ class MeshDataset(Dataset):
                     vertex_map[vertex_index] = len(new_vertices) - 1
                 new_face.append(vertex_map[vertex_index])
 
-            # Find the index of the minimum vertex
-            min_index = new_face.index(min(new_face))
+            # Convert indices to actual vertices
+            new_face_vertices = [new_vertices[i] for i in new_face]
 
-            # Rotate the list so that it starts with the minimum vertex
-            new_face = new_face[min_index:] + new_face[:min_index]
+            # Sort vertices in counter-clockwise order
+            sorted_vertices = sort_vertices_ccw(new_face_vertices)
 
-            new_faces.append(new_face)
+            # Convert back to indices and sort them in ascending order
+            sorted_indices = sorted([new_face[new_face_vertices.index(vertex)] for vertex in sorted_vertices])
 
-        # Sort the faces based on their first vertex
-        new_faces.sort(key=lambda x: x[0])
+            new_faces.append(sorted_indices)
+
 
         return self.augment_mesh(
             (
