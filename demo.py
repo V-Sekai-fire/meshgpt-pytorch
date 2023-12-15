@@ -25,7 +25,7 @@ run = wandb.init(
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
         "data_augment": data_augment,
-        "autoencoder_train": 200,
+        "autoencoder_train": 300,
         "transformer_train": 375,
         "batch_size": 1,
         "grad_accum_every": 1,
