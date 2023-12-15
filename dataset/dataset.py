@@ -207,6 +207,8 @@ class MeshDataset(Dataset):
             new_face.sort()
             new_faces.append(new_face)
 
+        new_faces.sort()
+        
         return self.augment_mesh(
             (
                 torch.tensor(new_vertices, dtype=torch.float),
