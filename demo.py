@@ -21,8 +21,8 @@ print(f"Sequence length: {seq_len}")
 run = wandb.init(
     project="meshgpt-pytorch",
     config={
-        "autoencoder_learning_rate": 0.2,
-        "transformer_learning_rate": 0.2,
+        "autoencoder_learning_rate": 0.1,
+        "transformer_learning_rate": 0.1,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
         "num_train_steps": 3000,
