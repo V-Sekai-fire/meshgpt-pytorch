@@ -74,19 +74,12 @@ class MeshDataset(Dataset):
     def compare_vertices(vertex_a, vertex_b):
         # glTF uses right-handed coordinate system (Y-Z-X).
         # Y is up and is different from the meshgpt paper.
-        if vertex_a[1] < vertex_b[1]:
-            return -1
-        elif vertex_a[1] > vertex_b[1]:
-            return 1
-        elif vertex_a[2] < vertex_b[2]:
-            return -1
-        elif vertex_a[2] > vertex_b[2]:
-            return 1
-        elif vertex_a[0] < vertex_b[0]:
-            return -1
-        elif vertex_a[0] > vertex_b[0]:
-            return 1
-        return 0
+        for i in [1, 2, 0]:  # Compare Y, then Z, then X
+            if vertex_a[i] < vertex_b[i]:
+                return -1
+            elif vertex_a[i] > vertex_b[i]:
+                return 1
+        return 0  # If all coordinates are equal
 
     def filter_files(self):
         filtered_list = [
