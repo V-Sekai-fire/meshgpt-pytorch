@@ -12,11 +12,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 dataset_directory = "dataset/unit_test"
 
-dataset = MeshDataset(dataset_directory, 4)
+data_augment = 6000
 
-seq_len = len(dataset.__getitem__(0)[0]) * 12
-
-print(f"Sequence length: {seq_len}")
+dataset = MeshDataset(dataset_directory, data_augment)
 
 run = wandb.init(
     project="meshgpt-pytorch",
@@ -25,15 +23,14 @@ run = wandb.init(
         "transformer_learning_rate": 0.1,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
-        "num_train_steps": 3000,
-        "num_transformer_train_steps": 1000,
+        "data_augment": data_augment,
+        "autoencoder_train": 3,
+        "transformer_train": 3,
         "warmup_steps": 500,
-        "batch_size": 4,
+        "batch_size": 20,
         "grad_accum_every": 1,
         "checkpoint_every": 40,
         "device": str(device),
-        "autoencoder_train": 2000,
-        "transformer_train": 500,
         "autoencoder": {
             "dim": 512,
             "encoder_depth": 6,
@@ -43,10 +40,12 @@ run = wandb.init(
         "dataset_size": dataset.__len__(),
     },
 )
+seq_len = len(dataset.__getitem__(0)[0]) * 12
+
+print(f"Sequence length: {seq_len}")
 
 load_from_checkpoint = True
 autoencoder = None
-num_train_steps = None
 
 autoencoder = MeshAutoencoder(
     num_quantizers=1,
@@ -55,14 +54,13 @@ autoencoder = MeshAutoencoder(
     decoder_depth=run.config.autoencoder["decoder_depth"],
     num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
 ).to(device)  
-num_train_steps = wandb.config.num_train_steps
 
 trainer = MeshAutoencoderTrainer(
     autoencoder,
+    num_train_steps=2000, # Ignored?
     dataset=dataset,
     batch_size=wandb.config.batch_size,
     grad_accum_every=wandb.config.grad_accum_every,
-    num_train_steps=num_train_steps,
     checkpoint_every=wandb.config.checkpoint_every,
     warmup_steps=wandb.config.warmup_steps,
     learning_rate=wandb.config.autoencoder_learning_rate,
@@ -81,10 +79,10 @@ transformer = MeshTransformer(
 
 transformer_trainer = MeshTransformerTrainer(
     transformer,
+    num_train_steps=2000, # Ignored?
     dataset=dataset,
     batch_size=wandb.config.batch_size,
     grad_accum_every=wandb.config.grad_accum_every,
-    num_train_steps=wandb.config.num_transformer_train_steps,
     checkpoint_every=wandb.config.checkpoint_every,
     warmup_steps=wandb.config.warmup_steps,
     learning_rate=wandb.config.transformer_learning_rate,
