@@ -252,8 +252,6 @@ class TestMeshDataset(unittest.TestCase):
         self.augments = 10
         self.dataset = MeshDataset("unit_test", self.augments)
         self.mesh_00 = [tensor.tolist() for tensor in self.dataset.__getitem__(0)]
-        with open("unit_test/mesh_00.json", "wb") as f:
-            f.write(json.dumps(self.mesh_00).encode())
 
     def test_mesh_augmentation(self):
         for i in range(self.augments):
