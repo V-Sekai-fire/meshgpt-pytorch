@@ -267,8 +267,6 @@ class TestMeshDataset(unittest.TestCase):
     def test_json_comparison(self):
         i = 0
         mesh = [tensor.tolist() for tensor in self.dataset.__getitem__(i)]
-        with open(f"mesh_00.json", "wb") as f:
-            f.write(json.dumps(mesh).encode())
         self.assertEqual(
             MeshDataset.compare_json(self.mesh_00, mesh),
             True,
