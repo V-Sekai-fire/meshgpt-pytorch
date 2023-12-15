@@ -223,8 +223,6 @@ class MeshDataset(Dataset):
 
 import unittest
 import json
-from dataset import MeshDataset
-
 
 class TestMeshDataset(unittest.TestCase):
     def setUp(self):
