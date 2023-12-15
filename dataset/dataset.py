@@ -234,6 +234,12 @@ class MeshDataset(Dataset):
             # Sort the vertices based on the angle each makes with the center
             return sorted(vertices, key=lambda vertex: -calculate_angle(vertex, center))
 
+        def calculate_normal(face_vertices):
+            # Calculate the normal of a face given its vertices
+            v1 = np.array(face_vertices[1]) - np.array(face_vertices[0])
+            v2 = np.array(face_vertices[2]) - np.array(face_vertices[0])
+            return np.cross(v1, v2)
+
         for face in all_faces:
             new_face = []
             for vertex_index in face:
@@ -246,15 +252,23 @@ class MeshDataset(Dataset):
             # Convert indices to actual vertices
             new_face_vertices = [new_vertices[i] for i in new_face]
 
+            # Calculate the original normal
+            original_normal = calculate_normal(new_face_vertices)
+
             # Sort vertices in counter-clockwise order
             sorted_vertices = sort_vertices_ccw(new_face_vertices)
 
-            # Convert back to indices and sort them in ascending order
-            sorted_indices = sorted([new_face[new_face_vertices.index(vertex)] for vertex in sorted_vertices])
+            # Calculate the new normal
+            new_normal = calculate_normal(sorted_vertices)
+
+            # If the direction of the normal has changed, reverse the order of the sorted vertices
+            if np.dot(original_normal, new_normal) < 0:
+                sorted_vertices = list(reversed(sorted_vertices))
+
+            # Map sorted vertices back to their corresponding indices
+            sorted_indices = [new_face[new_face_vertices.index(vertex)] for vertex in sorted_vertices]
 
             new_faces.append(sorted_indices)
-
-        new_faces = sorted(new_faces)
 
         return self.augment_mesh(
             (
