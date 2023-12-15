@@ -150,9 +150,16 @@ class MeshDataset(Dataset):
         # Normalize uniformly to fill [-1, 1]
         min_vals = np.min(final_vertices, axis=0)
         max_vals = np.max(final_vertices, axis=0)
-        max_range = np.max(max_vals - min_vals) / 2
+
+        # Calculate the maximum absolute value among all vertices
+        max_abs_val = max(np.max(np.abs(min_vals)), np.max(np.abs(max_vals)))
+
+        # Calculate the scale factor as the reciprocal of the maximum absolute value
+        scale_factor = 1 / max_abs_val if max_abs_val != 0 else 1
+
+        # Apply the normalization
         final_vertices = [
-            [(component - c) / max_range for component, c in zip(v, centroid)]
+            [(component - c) * scale_factor for component, c in zip(v, centroid)]
             for v in final_vertices
         ]
 
