@@ -22,22 +22,6 @@ class MeshDataset(Dataset):
         self.augments_per_item = augments_per_item
         self.seed = 42
 
-    @staticmethod
-    def compare_faces(face_a, face_b, vertices):
-        for i in range(3):
-            # Check if face indices are within the range of vertices list
-            if face_a[i] >= len(vertices) or face_b[i] >= len(vertices):
-                raise IndexError("Face index out of range")
-
-            vertex_comparison = MeshDataset.compare_vertices(
-                vertices[face_a[i]], vertices[face_b[i]]
-            )
-            if vertex_comparison != 0:
-                return vertex_comparison
-
-        return 0
-
-
     def get_max_face_count(self):
         max_faces = 0
         files = self.filter_files()
@@ -93,6 +77,9 @@ class MeshDataset(Dataset):
 
         return True
 
+    def __len__(self):
+        return len(self.filter_files()) * self.augments_per_item
+
     @staticmethod
     def compare_vertices(vertex_a, vertex_b):
         # glTF uses right-handed coordinate system (Y-Z-X).
@@ -104,69 +91,20 @@ class MeshDataset(Dataset):
                 return 1
         return 0  # If all coordinates are equal
 
-    def filter_files(self):
-        filtered_list = [
-            file for file in self.file_list if file.endswith(self.supported_formats)
-        ]
-        return filtered_list
+    @staticmethod
+    def compare_faces(face_a, face_b, vertices):
+        for i in range(3):
+            # Check if face indices are within the range of vertices list
+            if face_a[i] >= len(vertices) or face_b[i] >= len(vertices):
+                raise IndexError("Face index out of range")
 
-    def __len__(self):
-        return len(self.filter_files()) * self.augments_per_item
+            vertex_comparison = MeshDataset.compare_vertices(
+                vertices[face_a[i]], vertices[face_b[i]]
+            )
+            if vertex_comparison != 0:
+                return vertex_comparison
 
-    def augment_mesh(self, base_mesh, augment_count, augment_idx):
-        # Set the random seed for reproducibility
-        random.seed(self.seed + augment_count * augment_idx + augment_idx)
-
-        # Generate a random scale factor
-        scale = random.uniform(0.8, 1)
-
-        vertices = base_mesh[0]
-
-        # Calculate the centroid of the object
-        centroid = [
-            sum(vertex[i] for vertex in vertices) / len(vertices) for i in range(3)
-        ]
-
-        # Translate the vertices so that the centroid is at the origin
-        translated_vertices = [[v[i] - centroid[i] for i in range(3)] for v in vertices]
-
-        # Scale the translated vertices
-        scaled_vertices = [
-            [v[i] * scale for i in range(3)] for v in translated_vertices
-        ]
-
-        # Generate a random rotation matrix
-        rotation = R.from_euler("y", random.uniform(-180, 180), degrees=True)
-
-        # Apply the transformations to each vertex of the object
-        new_vertices = [
-            (np.dot(rotation.as_matrix(), np.array(v))).tolist()
-            for v in scaled_vertices
-        ]
-
-        # Translate the vertices back so that the centroid is at its original position
-        final_vertices = [[v[i] + centroid[i] for i in range(3)] for v in new_vertices]
-
-        # Normalize uniformly to fill [-1, 1]
-        min_vals = np.min(final_vertices, axis=0)
-        max_vals = np.max(final_vertices, axis=0)
-
-        # Calculate the maximum absolute value among all vertices
-        max_abs_val = max(np.max(np.abs(min_vals)), np.max(np.abs(max_vals)))
-
-        # Calculate the scale factor as the reciprocal of the maximum absolute value
-        scale_factor = 1 / max_abs_val if max_abs_val != 0 else 1
-
-        # Apply the normalization
-        final_vertices = [
-            [(component - c) * scale_factor for component, c in zip(v, centroid)]
-            for v in final_vertices
-        ]
-
-        return (
-            torch.from_numpy(np.array(final_vertices, dtype=np.float32)),
-            base_mesh[1],
-        )
+        return 0
 
     def __getitem__(self, idx):
         files = self.filter_files()
@@ -277,6 +215,61 @@ class MeshDataset(Dataset):
             ),
             self.augments_per_item,
             augment_idx,
+        )
+
+    def augment_mesh(self, base_mesh, augment_count, augment_idx):
+        # Set the random seed for reproducibility
+        random.seed(self.seed + augment_count * augment_idx + augment_idx)
+
+        # Generate a random scale factor
+        scale = random.uniform(0.8, 1)
+
+        vertices = base_mesh[0]
+
+        # Calculate the centroid of the object
+        centroid = [
+            sum(vertex[i] for vertex in vertices) / len(vertices) for i in range(3)
+        ]
+
+        # Translate the vertices so that the centroid is at the origin
+        translated_vertices = [[v[i] - centroid[i] for i in range(3)] for v in vertices]
+
+        # Scale the translated vertices
+        scaled_vertices = [
+            [v[i] * scale for i in range(3)] for v in translated_vertices
+        ]
+
+        # Generate a random rotation matrix
+        rotation = R.from_euler("y", random.uniform(-180, 180), degrees=True)
+
+        # Apply the transformations to each vertex of the object
+        new_vertices = [
+            (np.dot(rotation.as_matrix(), np.array(v))).tolist()
+            for v in scaled_vertices
+        ]
+
+        # Translate the vertices back so that the centroid is at its original position
+        final_vertices = [[v[i] + centroid[i] for i in range(3)] for v in new_vertices]
+
+        # Normalize uniformly to fill [-1, 1]
+        min_vals = np.min(final_vertices, axis=0)
+        max_vals = np.max(final_vertices, axis=0)
+
+        # Calculate the maximum absolute value among all vertices
+        max_abs_val = max(np.max(np.abs(min_vals)), np.max(np.abs(max_vals)))
+
+        # Calculate the scale factor as the reciprocal of the maximum absolute value
+        scale_factor = 1 / max_abs_val if max_abs_val != 0 else 1
+
+        # Apply the normalization
+        final_vertices = [
+            [(component - c) * scale_factor for component, c in zip(v, centroid)]
+            for v in final_vertices
+        ]
+
+        return (
+            torch.from_numpy(np.array(final_vertices, dtype=np.float32)),
+            base_mesh[1],
         )
 
 
