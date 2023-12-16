@@ -121,7 +121,7 @@ def encode_to_pua(codes):
     flat_codes = [
         item for sublist in codes for subsublist in sublist for item in subsublist
     ]
-    return "".join(chr(code + 0xE000) for code in flat_codes)
+    return "".join(chr(code + 0xF0000) for code in flat_codes)
 
 
 encoded_codes = encode_to_pua(codes_list)
