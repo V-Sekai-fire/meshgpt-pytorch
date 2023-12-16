@@ -6,16 +6,6 @@ from meshgpt_pytorch import (
     MeshAutoencoderTrainer,
 )
 
-
-def set_seed(seed):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-
-
 from dataset.dataset import MeshDataset
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -51,8 +41,6 @@ run = wandb.init(
         "dataset_size": dataset.__len__(),
     },
 )
-
-set_seed(wandb.config.seed)
 
 seq_len = dataset.get_max_face_count() * 3
 seq_len = ((seq_len + 2) // 3) * 3
