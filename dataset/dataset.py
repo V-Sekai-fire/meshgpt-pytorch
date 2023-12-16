@@ -258,17 +258,16 @@ class MeshDataset(Dataset):
             [v[i] * scale for i in range(3)] for v in translated_vertices
         ]
 
-        # Generate a random rotation matrix
-        rotation = R.from_euler("y", random.uniform(-180, 180), degrees=True)
-
-        # Apply the transformations to each vertex of the object
-        new_vertices = [
-            (np.dot(rotation.as_matrix(), np.array(v))).tolist()
+        # Jitter the vertices
+        jittered_vertices = [
+            [v[i] + random.uniform(-1.0/256.0, 1.0/256.0) for i in range(3)]
             for v in scaled_vertices
         ]
 
         # Translate the vertices back so that the centroid is at its original position
-        final_vertices = [[v[i] + centroid[i] for i in range(3)] for v in new_vertices]
+        final_vertices = [
+            [v[i] + centroid[i] for i in range(3)] for v in jittered_vertices
+        ]
 
         # Normalize uniformly to fill [-1, 1]
         min_vals = np.min(final_vertices, axis=0)
