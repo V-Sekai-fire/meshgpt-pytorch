@@ -1,4 +1,4 @@
-import torch, wandb, os, random
+import torch, wandb, os
 import numpy as np
 
 from meshgpt_pytorch import (
@@ -19,14 +19,13 @@ dataset = MeshDataset(dataset_directory, data_augment)
 run = wandb.init(
     project="meshgpt-pytorch",
     config={
-        "seed": 42,
         "get_max_face_count": dataset.get_max_face_count(),
-        "autoencoder_learning_rate": 0.2,
+        "autoencoder_learning_rate": 0.1,
         "transformer_learning_rate": 0.1,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
         "data_augment": data_augment,
-        "autoencoder_train": 200,
+        "autoencoder_train": 300,
         "transformer_train": 375,
         "batch_size": 1,
         "grad_accum_every": 1,
@@ -36,7 +35,7 @@ run = wandb.init(
             "dim": 512,
             "encoder_depth": 6,
             "decoder_depth": 6,
-            "num_discrete_coors": 256,
+            "num_discrete_coors": 128,
         },
         "dataset_size": dataset.__len__(),
     },
