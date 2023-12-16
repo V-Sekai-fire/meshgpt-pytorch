@@ -12,7 +12,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 dataset_directory = "dataset/unit_test"
 
-data_augment = 4
+data_augment = 8
 
 dataset = MeshDataset(dataset_directory, data_augment)
 
