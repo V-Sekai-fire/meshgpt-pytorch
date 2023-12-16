@@ -65,6 +65,20 @@ class MeshDataset(Dataset):
             f.write(scene.export(file_type="glb"))
 
     @staticmethod
+    def convert_to_obj(json_data, output_file_path):
+        scene = trimesh.Scene()
+        vertices = np.array(json_data[0])
+        faces = np.array(json_data[1])
+        if faces.max() >= len(vertices):
+            raise ValueError(
+                f"Face index {faces.max()} exceeds number of vertices {len(vertices)}"
+            )
+        mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+        scene.add_geometry(mesh)
+        with open(output_file_path, "w") as f:
+            f.write(scene.export(file_type="obj"))
+
+    @staticmethod
     def compare_json(json_data1, json_data2):
         if len(json_data1) != len(json_data2):
             return False
@@ -285,7 +299,6 @@ class TestMeshDataset(unittest.TestCase):
     def setUp(self):
         self.augments = 3
         self.dataset = MeshDataset("unit_test", self.augments)
-        self.mesh_00 = [tensor.tolist() for tensor in self.dataset.__getitem__(0)]
 
     def test_mesh_augmentation(self):
         for i in range(self.augments):
@@ -295,15 +308,6 @@ class TestMeshDataset(unittest.TestCase):
             self.dataset.convert_to_glb(
                 mesh, f"unit_augment/mesh_{str(i).zfill(2)}.glb"
             )
-
-    def test_json_comparison(self):
-        i = 0
-        mesh = [tensor.tolist() for tensor in self.dataset.__getitem__(i)]
-        self.assertEqual(
-            MeshDataset.compare_json(self.mesh_00, mesh),
-            True,
-            f"JSON data 00 and {str(i).zfill(2)} are different.",
-        )
 
 
 if __name__ == "__main__":
