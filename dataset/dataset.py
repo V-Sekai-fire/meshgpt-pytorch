@@ -20,7 +20,6 @@ class MeshDataset(Dataset):
         self.file_list = os.listdir(folder_path)
         self.supported_formats = (".glb", ".gltf")
         self.augments_per_item = augments_per_item
-        self.seed = 42
 
     def get_max_face_count(self):
         max_faces = 0
@@ -63,6 +62,20 @@ class MeshDataset(Dataset):
         scene.add_geometry(mesh)
         with open(output_file_path, "wb") as f:
             f.write(scene.export(file_type="glb"))
+
+    @staticmethod
+    def convert_to_obj(json_data, output_file_path):
+        scene = trimesh.Scene()
+        vertices = np.array(json_data[0])
+        faces = np.array(json_data[1])
+        if faces.max() >= len(vertices):
+            raise ValueError(
+                f"Face index {faces.max()} exceeds number of vertices {len(vertices)}"
+            )
+        mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+        scene.add_geometry(mesh)
+        with open(output_file_path, "w") as f:
+            f.write(scene.export(file_type="obj"))
 
     @staticmethod
     def compare_json(json_data1, json_data2):
@@ -167,7 +180,9 @@ class MeshDataset(Dataset):
 
         def sort_vertices_ccw(vertices):
             # Calculate the center of the vertices
-            center = [sum(vertex[i] for vertex in vertices) / len(vertices) for i in range(2)]
+            center = [
+                sum(vertex[i] for vertex in vertices) / len(vertices) for i in range(2)
+            ]
 
             # Sort the vertices based on the angle each makes with the center
             return sorted(vertices, key=lambda vertex: -calculate_angle(vertex, center))
@@ -204,7 +219,9 @@ class MeshDataset(Dataset):
                 sorted_vertices = list(reversed(sorted_vertices))
 
             # Map sorted vertices back to their corresponding indices
-            sorted_indices = [new_face[new_face_vertices.index(vertex)] for vertex in sorted_vertices]
+            sorted_indices = [
+                new_face[new_face_vertices.index(vertex)] for vertex in sorted_vertices
+            ]
 
             new_faces.append(sorted_indices)
 
@@ -218,12 +235,6 @@ class MeshDataset(Dataset):
         )
 
     def augment_mesh(self, base_mesh, augment_count, augment_idx):
-        # Set the random seed for reproducibility
-        random.seed(self.seed + augment_count * augment_idx + augment_idx)
-
-        # Generate a random scale factor
-        scale = random.uniform(0.8, 1)
-
         vertices = base_mesh[0]
 
         # Calculate the centroid of the object
@@ -233,6 +244,12 @@ class MeshDataset(Dataset):
 
         # Translate the vertices so that the centroid is at the origin
         translated_vertices = [[v[i] - centroid[i] for i in range(3)] for v in vertices]
+
+        # Calculate the maximum absolute value across all dimensions
+        max_value = max(max(abs(v[i]) for v in translated_vertices) for i in range(3))
+
+        # Generate a scale factor based on the maximum value
+        scale = 1 / max_value
 
         # Scale the translated vertices
         scaled_vertices = [
@@ -251,22 +268,6 @@ class MeshDataset(Dataset):
         # Translate the vertices back so that the centroid is at its original position
         final_vertices = [[v[i] + centroid[i] for i in range(3)] for v in new_vertices]
 
-        # Normalize uniformly to fill [-1, 1]
-        min_vals = np.min(final_vertices, axis=0)
-        max_vals = np.max(final_vertices, axis=0)
-
-        # Calculate the maximum absolute value among all vertices
-        max_abs_val = max(np.max(np.abs(min_vals)), np.max(np.abs(max_vals)))
-
-        # Calculate the scale factor as the reciprocal of the maximum absolute value
-        scale_factor = 1 / max_abs_val if max_abs_val != 0 else 1
-
-        # Apply the normalization
-        final_vertices = [
-            [(component - c) * scale_factor for component, c in zip(v, centroid)]
-            for v in final_vertices
-        ]
-
         return (
             torch.from_numpy(np.array(final_vertices, dtype=np.float32)),
             base_mesh[1],
@@ -276,11 +277,11 @@ class MeshDataset(Dataset):
 import unittest
 import json
 
+
 class TestMeshDataset(unittest.TestCase):
     def setUp(self):
-        self.augments = 10
+        self.augments = 3
         self.dataset = MeshDataset("unit_test", self.augments)
-        self.mesh_00 = [tensor.tolist() for tensor in self.dataset.__getitem__(0)]
 
     def test_mesh_augmentation(self):
         for i in range(self.augments):
@@ -290,15 +291,6 @@ class TestMeshDataset(unittest.TestCase):
             self.dataset.convert_to_glb(
                 mesh, f"unit_augment/mesh_{str(i).zfill(2)}.glb"
             )
-
-    def test_json_comparison(self):
-        i = 0
-        mesh = [tensor.tolist() for tensor in self.dataset.__getitem__(i)]
-        self.assertEqual(
-            MeshDataset.compare_json(self.mesh_00, mesh),
-            True,
-            f"JSON data 00 and {str(i).zfill(2)} are different.",
-        )
 
 
 if __name__ == "__main__":

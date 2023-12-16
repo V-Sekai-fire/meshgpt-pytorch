@@ -55,21 +55,21 @@ autoencoder = MeshAutoencoder(
     encoder_depth=run.config.autoencoder["encoder_depth"],
     decoder_depth=run.config.autoencoder["decoder_depth"],
     num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
-).to(device)  
+).to(device)
 
 trainer = MeshAutoencoderTrainer(
     autoencoder,
-    num_train_steps=2000, # Ignored?
+    num_train_steps=2000,  # Ignored?
     dataset=dataset,
     batch_size=wandb.config.batch_size,
     grad_accum_every=wandb.config.grad_accum_every,
     checkpoint_every=wandb.config.checkpoint_every,
-    warmup_steps=500, # Ignored?
+    warmup_steps=500,  # Ignored?
     learning_rate=wandb.config.autoencoder_learning_rate,
     use_wandb_tracking=True,
 )
 trainer.train(run.config.autoencoder_train)
-autoencoder.save(f"checkpoints/autoencoder.pt", overwrite = True)
+autoencoder.save(f"checkpoints/autoencoder.pt", overwrite=True)
 
 from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
 
