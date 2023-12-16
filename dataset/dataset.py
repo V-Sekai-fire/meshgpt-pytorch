@@ -20,6 +20,7 @@ class MeshDataset(Dataset):
         self.file_list = os.listdir(folder_path)
         self.supported_formats = (".glb", ".gltf")
         self.augments_per_item = augments_per_item
+        self.seed = 42
 
     def get_max_face_count(self):
         max_faces = 0
@@ -235,6 +236,12 @@ class MeshDataset(Dataset):
         )
 
     def augment_mesh(self, base_mesh, augment_count, augment_idx):
+        # Set the random seed for reproducibility
+        random.seed(self.seed + augment_count * augment_idx + augment_idx)
+
+        # Generate a random scale factor
+        scale = random.uniform(0.8, 1)
+
         vertices = base_mesh[0]
 
         # Calculate the centroid of the object
@@ -244,12 +251,6 @@ class MeshDataset(Dataset):
 
         # Translate the vertices so that the centroid is at the origin
         translated_vertices = [[v[i] - centroid[i] for i in range(3)] for v in vertices]
-
-        # Calculate the maximum absolute value across all dimensions
-        max_value = max(max(abs(v[i]) for v in translated_vertices) for i in range(3))
-
-        # Generate a scale factor based on the maximum value
-        scale = 1 / max_value
 
         # Scale the translated vertices
         scaled_vertices = [
@@ -267,6 +268,22 @@ class MeshDataset(Dataset):
 
         # Translate the vertices back so that the centroid is at its original position
         final_vertices = [[v[i] + centroid[i] for i in range(3)] for v in new_vertices]
+
+        # Normalize uniformly to fill [-1, 1]
+        min_vals = np.min(final_vertices, axis=0)
+        max_vals = np.max(final_vertices, axis=0)
+
+        # Calculate the maximum absolute value among all vertices
+        max_abs_val = max(np.max(np.abs(min_vals)), np.max(np.abs(max_vals)))
+
+        # Calculate the scale factor as the reciprocal of the maximum absolute value
+        scale_factor = 1 / max_abs_val if max_abs_val != 0 else 1
+
+        # Apply the normalization
+        final_vertices = [
+            [(component - c) * scale_factor for component, c in zip(v, centroid)]
+            for v in final_vertices
+        ]
 
         return (
             torch.from_numpy(np.array(final_vertices, dtype=np.float32)),
