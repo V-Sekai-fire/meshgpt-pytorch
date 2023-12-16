@@ -20,12 +20,12 @@ run = wandb.init(
     project="meshgpt-pytorch",
     config={
         "get_max_face_count": dataset.get_max_face_count(),
-        "autoencoder_learning_rate": 0.1,
-        "transformer_learning_rate": 0.1,
+        "autoencoder_learning_rate": 0.4, # Tune to be 3.7 loss on Epoch 80.
+        "transformer_learning_rate": 0.4,
         "architecture": "MeshGPT",
         "dataset": dataset_directory,
         "data_augment": data_augment,
-        "autoencoder_train": 300,
+        "autoencoder_train": 270, # Stop when the training explodes from 0.4 loss to 1.7 loss.
         "transformer_train": 375,
         "batch_size": 4,
         "grad_accum_every": 1,
