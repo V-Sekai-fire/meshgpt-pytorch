@@ -1074,14 +1074,15 @@ class MeshTransformer(Module):
             codes = codes.masked_fill(mask, self.pad_id)
             break
 
-
-        self.autoencoder.eval()
-        continuous_coors = self.autoencoder.decode_from_codes_to_faces(codes)
-        
         if return_codes:
             codes = rearrange(codes, 'b (n q) -> b n q', q = self.num_quantizers)
+            self.autoencoder.eval()
+            continuous_coors = self.autoencoder.decode_from_codes_to_faces(codes)
             return codes, continuous_coors
-        return continuous_coors
+
+        self.autoencoder.eval()
+        return self.autoencoder.decode_from_codes_to_faces(codes)
+
 
     def forward(
         self,
