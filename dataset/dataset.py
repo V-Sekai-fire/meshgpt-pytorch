@@ -120,7 +120,7 @@ class MeshDataset(Dataset):
 
         return 0
 
-    def __getitem__(self, idx):
+    def load_and_process_scene(self, idx):
         files = self.filter_files()
         file_idx = idx // self.augments_per_item
         augment_idx = idx % self.augments_per_item
@@ -169,6 +169,9 @@ class MeshDataset(Dataset):
             )
         )
 
+        return all_faces, all_vertices, augment_idx
+
+    def create_new_vertices_and_faces(self, all_faces, all_vertices):
         new_vertices = []
         new_faces = []
         vertex_map = {}
@@ -176,20 +179,16 @@ class MeshDataset(Dataset):
         import math
 
         def calculate_angle(point, center):
-            # Calculate the angle between the point and the horizontal line through the center
             return math.atan2(point[1] - center[1], point[0] - center[0])
 
         def sort_vertices_ccw(vertices):
-            # Calculate the center of the vertices
             center = [
                 sum(vertex[i] for vertex in vertices) / len(vertices) for i in range(2)
             ]
 
-            # Sort the vertices based on the angle each makes with the center
             return sorted(vertices, key=lambda vertex: -calculate_angle(vertex, center))
 
         def calculate_normal(face_vertices):
-            # Calculate the normal of a face given its vertices
             v1 = np.array(face_vertices[1]) - np.array(face_vertices[0])
             v2 = np.array(face_vertices[2]) - np.array(face_vertices[0])
             return np.cross(v1, v2)
@@ -203,28 +202,39 @@ class MeshDataset(Dataset):
                     vertex_map[vertex_index] = len(new_vertices) - 1
                 new_face.append(vertex_map[vertex_index])
 
-            # Convert indices to actual vertices
             new_face_vertices = [new_vertices[i] for i in new_face]
 
-            # Calculate the original normal
             original_normal = calculate_normal(new_face_vertices)
 
-            # Sort vertices in counter-clockwise order
             sorted_vertices = sort_vertices_ccw(new_face_vertices)
 
-            # Calculate the new normal
             new_normal = calculate_normal(sorted_vertices)
 
-            # If the direction of the normal has changed, reverse the order of the sorted vertices
             if np.dot(original_normal, new_normal) < 0:
                 sorted_vertices = list(reversed(sorted_vertices))
 
-            # Map sorted vertices back to their corresponding indices
             sorted_indices = [
                 new_face[new_face_vertices.index(vertex)] for vertex in sorted_vertices
             ]
 
             new_faces.append(sorted_indices)
+
+        return new_vertices, new_faces
+
+    def __getitem__(self, idx):
+        all_faces, all_vertices, augment_idx = self.load_and_process_scene(idx)
+        new_vertices, new_faces = self.create_new_vertices_and_faces(
+            all_faces, all_vertices
+        )
+
+        return self.augment_mesh(
+            (
+                torch.tensor(new_vertices, dtype=torch.float),
+                torch.tensor(new_faces, dtype=torch.long),
+            ),
+            self.augments_per_item,
+            augment_idx,
+        )
 
         return self.augment_mesh(
             (
