@@ -27,7 +27,7 @@ run = wandb.init(
         "data_augment": data_augment,
         "autoencoder_train": 300,
         "transformer_train": 375,
-        "batch_size": 1,
+        "batch_size": 4,
         "grad_accum_every": 1,
         "checkpoint_every": 40,
         "device": str(device),
