@@ -236,15 +236,6 @@ class MeshDataset(Dataset):
             augment_idx,
         )
 
-        return self.augment_mesh(
-            (
-                torch.tensor(new_vertices, dtype=torch.float),
-                torch.tensor(new_faces, dtype=torch.long),
-            ),
-            self.augments_per_item,
-            augment_idx,
-        )
-
     def augment_mesh(self, base_mesh, augment_count, augment_idx):
         # Set the random seed for reproducibility
         random.seed(self.seed + augment_count * augment_idx + augment_idx)
