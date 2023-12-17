@@ -189,7 +189,7 @@ if __name__ == "__main__":
     parser.add_argument("--data_augment", type=int, default=2)
     parser.add_argument("--autoencoder_learning_rate", type=float, default=0.4)
     parser.add_argument("--transformer_learning_rate", type=float, default=0.2)
-    parser.add_argument("--autoencoder_train", type=int, default=300) # 200
+    parser.add_argument("--autoencoder_train", type=int, default=600) # 200
     parser.add_argument("--transformer_train", type=int, default=500) # 375
     parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--grad_accum_every", type=int, default=1)
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     parser.add_argument("--dim", type=int, default=256)
     parser.add_argument("--encoder_depth", type=int, default=6)
     parser.add_argument("--decoder_depth", type=int, default=6)
-    parser.add_argument("--num_discrete_coors", type=int, default=256)
+    parser.add_argument("--num_discrete_coors", type=int, default=1024)
     parser.add_argument("--inference_only", action='store_true')
     parser.add_argument("--autoencoder_path")
     parser.add_argument("--transformer_path")
