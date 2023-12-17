@@ -35,7 +35,9 @@ class MeshDataset(Dataset):
                 total_faces_in_file += num_faces
             max_faces = 1349
             if total_faces_in_file > max_faces:
-                raise ValueError(f"Mesh {file_name} has too many faces : {total_faces_in_file} / {max_faces}")
+                raise ValueError(
+                    f"Mesh {file_name} has too many faces : {total_faces_in_file} / {max_faces}"
+                )
 
     def get_max_face_count(self):
         max_faces = 0
@@ -255,9 +257,6 @@ class MeshDataset(Dataset):
         # Set the random seed for reproducibility
         random.seed(self.seed + augment_count * augment_idx + augment_idx)
 
-        # Generate a random scale factor
-        scale = random.uniform(0.8, 1)
-
         vertices = base_mesh[0]
 
         # Calculate the centroid of the object
@@ -268,20 +267,23 @@ class MeshDataset(Dataset):
         # Translate the vertices so that the centroid is at the origin
         translated_vertices = [[v[i] - centroid[i] for i in range(3)] for v in vertices]
 
-        # Scale the translated vertices
-        scaled_vertices = [
-            [v[i] * scale for i in range(3)] for v in translated_vertices
-        ]
+        # Generate a random scale factor
+        scale = random.uniform(0.8, 1)
 
-        # Jitter the vertices
-        jittered_vertices = [
-            [v[i] + random.uniform(-1.0/1024.0, 1.0/1024.0) for i in range(3)]
-            for v in scaled_vertices
+        # Create a rotation matrix for rotation around z-axis
+        theta = (np.pi / 256) * (augment_idx % 256)  # rotate on a grid of 1/256
+        cos, sin = np.cos(theta), np.sin(theta)
+        rotation_matrix = np.array([[cos, -sin, 0], [sin, cos, 0], [0, 0, 1]])
+
+        # Apply the affine transformation (rotation + scaling)
+        transformed_vertices = [
+            np.dot(rotation_matrix, [v[i] * scale for i in range(3)])
+            for v in translated_vertices
         ]
 
         # Translate the vertices back so that the centroid is at its original position
         final_vertices = [
-            [v[i] + centroid[i] for i in range(3)] for v in jittered_vertices
+            [v[i] + centroid[i] for i in range(3)] for v in transformed_vertices
         ]
 
         # Normalize uniformly to fill [-1, 1]
