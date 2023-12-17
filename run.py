@@ -180,7 +180,7 @@ def process_mesh_data(run, device, transformer):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_directory")
+    parser.add_argument("--dataset_directory", type=str, default="dataset/blockmesh_test/blockmesh")
     parser.add_argument("--data_augment", type=int, default=2)
     parser.add_argument("--autoencoder_learning_rate", type=float, default=0.4)
     parser.add_argument("--transformer_learning_rate", type=float, default=0.2)
