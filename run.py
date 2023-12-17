@@ -125,7 +125,7 @@ def train_transformer(autoencoder, run, dataset, device, seq_len):
     return transformer
 
 def process_mesh_data(run, device, transformer):
-    codes = transformer.generate(return_codes=True)
+    codes = transformer.generate(return_codes=True, texts=["cat"])
 
     transformer.autoencoder.eval()
 
