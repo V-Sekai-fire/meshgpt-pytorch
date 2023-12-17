@@ -21,6 +21,21 @@ class MeshDataset(Dataset):
         self.supported_formats = (".glb", ".gltf")
         self.augments_per_item = augments_per_item
         self.seed = 42
+        for file_name in self.filter_files():
+            file_path = os.path.join(self.folder_path, file_name)
+            scene = trimesh.load(file_path, force="scene")
+            total_faces_in_file = 0
+            for _, geometry in scene.geometry.items():
+                try:
+                    geometry.apply_transform(scene.graph.get(_)[0])
+                except Exception as e:
+                    pass
+
+                num_faces = len(geometry.faces)
+                total_faces_in_file += num_faces
+            max_faces = 1349
+            if total_faces_in_file > max_faces:
+                raise ValueError(f"Mesh {file_name} has too many faces : {total_faces_in_file} / {max_faces}")
 
     def get_max_face_count(self):
         max_faces = 0
