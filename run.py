@@ -190,7 +190,7 @@ if __name__ == "__main__":
     parser.add_argument("--transformer_train", type=int, default=500) # 500
     parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--grad_accum_every", type=int, default=1)
-    parser.add_argument("--checkpoint_every", type=int, default=1)
+    parser.add_argument("--checkpoint_every", type=int, default=60)
     parser.add_argument("--dim", type=int, default=256)
     parser.add_argument("--encoder_depth", type=int, default=6)
     parser.add_argument("--decoder_depth", type=int, default=6)
