@@ -65,7 +65,7 @@ def main(args):
             ).to(device)
             train_autoencoder(run, dataset, autoencoder)
     
-    seq_len = dataset.get_max_face_count() * 6
+    seq_len = dataset.get_max_face_count() * 3 * run.config.num_quantizers
     print(f"Sequence length: {seq_len}")
     transformer = None
     if args.inference_only:
@@ -201,7 +201,7 @@ if __name__ == "__main__":
     parser.add_argument("--inference_only", action='store_true')
     parser.add_argument("--autoencoder_path")
     parser.add_argument("--transformer_path")
-    parser.add_argument("--num_quantizers", type=int, default=2)
+    parser.add_argument("--num_quantizers", type=int, default=1)
     args = parser.parse_args()
 
     main(args)
