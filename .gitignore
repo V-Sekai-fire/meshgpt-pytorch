@@ -172,3 +172,15 @@ output_codes.json
 output.glb
 
 output.obj
+
+dataset/unit_augment/mesh_00.glb
+
+dataset/unit_augment/mesh_00.json
+
+dataset/unit_augment/mesh_01.glb
+
+dataset/unit_augment/mesh_01.json
+
+dataset/unit_augment/mesh_02.glb
+
+dataset/unit_augment/mesh_02.json

@@ -313,7 +313,7 @@ import json
 class TestMeshDataset(unittest.TestCase):
     def setUp(self):
         self.augments = 3
-        self.dataset = MeshDataset("unit_test", self.augments)
+        self.dataset = MeshDataset("blockmesh_test/blockmesh", self.augments)
 
     def test_mesh_augmentation(self):
         for i in range(self.augments):
