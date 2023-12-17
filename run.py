@@ -65,15 +65,18 @@ def main(args):
             ).to(device)
             train_autoencoder(run, dataset, autoencoder)
 
+    seq_len = dataset.get_max_face_count() * 3 * run.config.num_quantizers
+    print(f"Sequence length: {seq_len}")
     transformer = None
     if args.inference_only:
         transformer = MeshTransformer(
             autoencoder,
             dim=run.config.autoencoder["dim"],
+            max_seq_len=seq_len,
         ).to(device)
         transformer.load(run.config.transformer_path)
     else:
-        transformer = train_transformer(autoencoder, run, dataset, device)
+        transformer = train_transformer(autoencoder, run, dataset, device, seq_len)
     process_mesh_data(run, device, transformer)
 
 def train_autoencoder(run, dataset, autoencoder):
@@ -98,10 +101,11 @@ def train_autoencoder(run, dataset, autoencoder):
 from datetime import datetime
 from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
 
-def train_transformer(autoencoder, run, dataset, device):
+def train_transformer(autoencoder, run, dataset, device, seq_len):
     transformer = MeshTransformer(
         autoencoder,
         dim=run.config.autoencoder["dim"],
+        max_seq_len=seq_len,
     ).to(device)
 
     transformer_trainer = MeshTransformerTrainer(
