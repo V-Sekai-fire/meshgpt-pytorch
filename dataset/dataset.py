@@ -21,6 +21,7 @@ class MeshDataset(Dataset):
         self.supported_formats = (".glb", ".gltf")
         self.augments_per_item = augments_per_item
         self.seed = 42
+
         for file_name in self.filter_files():
             file_path = os.path.join(self.folder_path, file_name)
             scene = trimesh.load(file_path, force="scene")
@@ -33,11 +34,25 @@ class MeshDataset(Dataset):
 
                 num_faces = len(geometry.faces)
                 total_faces_in_file += num_faces
+
+            self.log_mesh_details(file_name, total_faces_in_file)
+
             max_faces = 1349
             if total_faces_in_file > max_faces:
                 raise ValueError(
                     f"Mesh {file_name} has too many faces : {total_faces_in_file} / {max_faces}"
                 )
+        
+        wandb.log({"dataset_size": self.__len__()})
+
+    def log_mesh_details(self, file_name, total_faces_in_file):
+        wandb.log(
+            {
+                "file_name": file_name,
+                "total_faces_in_file": total_faces_in_file,
+                "max_faces_allowed": self.get_max_face_count(),
+            }
+        )
 
     def get_max_face_count(self):
         max_faces = 0
@@ -240,7 +255,19 @@ class MeshDataset(Dataset):
 
         return new_vertices, new_faces
 
+    def get_item_labels(self):
+        files = self.filter_files()
+        labels = []
+        for idx in range(self.__len__()):
+            file_idx = idx // self.augments_per_item
+            file_name = files[file_idx]
+        return labels
+
     def __getitem__(self, idx):
+        files = self.filter_files()
+        file_idx = idx // self.augments_per_item
+        file_name = files[file_idx]
+
         all_faces, all_vertices, augment_idx = self.load_and_process_scene(idx)
         new_vertices, new_faces = self.create_new_vertices_and_faces(
             all_faces, all_vertices
@@ -328,6 +355,11 @@ class TestMeshDataset(unittest.TestCase):
                 mesh, f"unit_augment/mesh_{str(i).zfill(2)}.glb"
             )
 
+    def test_mesh_labels(self):
+        labels = self.dataset.get_item_labels()
+        print(f"labels: {labels}")
+
 
 if __name__ == "__main__":
+    wandb.init(project="meshgpt-pytorch", config={})
     unittest.main()
