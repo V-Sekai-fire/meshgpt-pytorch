@@ -16,11 +16,12 @@ def main(args):
     dataset_directory = args.dataset_directory
     data_augment = args.data_augment
     dataset = MeshDataset(dataset_directory, data_augment)
-    autoencoder = None
+    autoencoder = None    
 
     run = wandb.init(
         project="meshgpt-pytorch",
         config={
+            "transformer_path": args.transformer_path,
             "autoencoder_path": args.autoencoder_path,
             "inference_only": args.inference_only,
             "get_max_face_count": dataset.get_max_face_count(),
@@ -45,28 +46,37 @@ def main(args):
             "dataset_size": dataset.__len__(),
         },
     )
-
-    if args.autoencoder_path:
-        autoencoder = MeshAutoencoder(
-            num_quantizers=run.config.num_quantizers,
-            dim=run.config.autoencoder["dim"],
-            encoder_depth=run.config.autoencoder["encoder_depth"],
-            decoder_depth=run.config.autoencoder["decoder_depth"],
-            num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
-        ).to(device)
-        autoencoder.init_and_load_from(run.config.mesh_autoencoder_path)
-    else:
-        autoencoder = MeshAutoencoder(
-            dim=run.config.autoencoder["dim"],
-            encoder_depth=run.config.autoencoder["encoder_depth"],
-            decoder_depth=run.config.autoencoder["decoder_depth"],
-            num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
-        ).to(device)
-        train_autoencoder(run, dataset, autoencoder)
+    if not args.inference_only:
+        if args.autoencoder_path:
+            autoencoder = MeshAutoencoder(
+                num_quantizers=run.config.num_quantizers,
+                dim=run.config.autoencoder["dim"],
+                encoder_depth=run.config.autoencoder["encoder_depth"],
+                decoder_depth=run.config.autoencoder["decoder_depth"],
+                num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
+            ).to(device)
+            autoencoder.init_and_load_from(run.config.mesh_autoencoder_path)
+        else:
+            autoencoder = MeshAutoencoder(
+                dim=run.config.autoencoder["dim"],
+                encoder_depth=run.config.autoencoder["encoder_depth"],
+                decoder_depth=run.config.autoencoder["decoder_depth"],
+                num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
+            ).to(device)
+            train_autoencoder(run, dataset, autoencoder)
     
     seq_len = dataset.get_max_face_count() * 6
     print(f"Sequence length: {seq_len}")
-    transformer = train_transformer(autoencoder, run, dataset, device, seq_len)
+    transformer = None
+    if args.inference_only:
+        transformer = MeshTransformer(
+            autoencoder,
+            dim=run.config.autoencoder["dim"],
+            max_seq_len=seq_len,
+        ).to(device)
+        transformer.load(run.config.transformer_path)
+    else:
+        transformer = train_transformer(autoencoder, run, dataset, device, seq_len)
     process_mesh_data(run, device, transformer)
 
 def train_autoencoder(run, dataset, autoencoder):
@@ -190,6 +200,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_discrete_coors", type=int, default=128)
     parser.add_argument("--inference_only", action='store_true')
     parser.add_argument("--autoencoder_path")
+    parser.add_argument("--transformer_path")
     parser.add_argument("--num_quantizers", type=int, default=2)
     args = parser.parse_args()
 
