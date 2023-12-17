@@ -275,7 +275,7 @@ class MeshDataset(Dataset):
 
         # Jitter the vertices
         jittered_vertices = [
-            [v[i] + random.uniform(-1.0/256.0, 1.0/256.0) for i in range(3)]
+            [v[i] + random.uniform(-1.0/1024.0, 1.0/1024.0) for i in range(3)]
             for v in scaled_vertices
         ]
 
@@ -313,7 +313,7 @@ import json
 class TestMeshDataset(unittest.TestCase):
     def setUp(self):
         self.augments = 3
-        self.dataset = MeshDataset("blockmesh_test/blockmesh", self.augments)
+        self.dataset = MeshDataset("unit_test", self.augments)
 
     def test_mesh_augmentation(self):
         for i in range(self.augments):
