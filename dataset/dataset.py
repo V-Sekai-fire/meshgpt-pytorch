@@ -77,6 +77,7 @@ class MeshDataset(Dataset):
                 f"Face index {faces.max()} exceeds number of vertices {len(vertices)}"
             )
         mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+        mesh.vertex_normals
         scene.add_geometry(mesh)
         with open(output_file_path, "wb") as f:
             f.write(scene.export(file_type="glb"))
@@ -91,6 +92,7 @@ class MeshDataset(Dataset):
                 f"Face index {faces.max()} exceeds number of vertices {len(vertices)}"
             )
         mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+        mesh.vertex_normals
         scene.add_geometry(mesh)
         with open(output_file_path, "w") as f:
             f.write(scene.export(file_type="obj"))
