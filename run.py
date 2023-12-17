@@ -131,12 +131,9 @@ def process_mesh_data(run, device, transformer):
 
     transformer.autoencoder.eval()
 
-    continuous_coors = transformer.autoencoder.decode_from_codes_to_faces(codes)
+    continuous_coors = transformer.autoencoder.decode_from_codes_to_faces(codes)[0]
 
-    continuous_coors_list = continuous_coors.cpu().tolist()
-
-    with open("continuous_coors.json", "w") as f:
-        json.dump(continuous_coors.tolist(), f)
+    continuous_coors_list = [np_array.tolist() for np_array in continuous_coors]
 
     flat_list = [item for sublist in continuous_coors_list for item in sublist]
 
@@ -144,8 +141,8 @@ def process_mesh_data(run, device, transformer):
 
     faces = [[i, i + 1, i + 2] for i in range(0, len(vertices), 3)]
 
-    dataset.convert_to_glb((vertices, faces), "output.glb")
-    dataset.convert_to_obj((vertices, faces), "output.obj")
+    MeshDataset.convert_to_glb((vertices, faces), "output.glb")
+    MeshDataset.convert_to_obj((vertices, faces), "output.obj")
 
     def encode_to_pua(codes):
         flat_codes = [
@@ -189,8 +186,8 @@ if __name__ == "__main__":
     parser.add_argument("--data_augment", type=int, default=2)
     parser.add_argument("--autoencoder_learning_rate", type=float, default=0.4)
     parser.add_argument("--transformer_learning_rate", type=float, default=0.2)
-    parser.add_argument("--autoencoder_train", type=int, default=600) # 200
-    parser.add_argument("--transformer_train", type=int, default=500) # 375
+    parser.add_argument("--autoencoder_train", type=int, default=600) # 600
+    parser.add_argument("--transformer_train", type=int, default=500) # 500
     parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--grad_accum_every", type=int, default=1)
     parser.add_argument("--checkpoint_every", type=int, default=1)
