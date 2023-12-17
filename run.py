@@ -15,7 +15,6 @@ def main(args):
 
     dataset_directory = args.dataset_directory
     data_augment = args.data_augment
-    dataset = MeshDataset(dataset_directory, data_augment)
     autoencoder = None
 
     run = wandb.init(
@@ -24,7 +23,6 @@ def main(args):
             "transformer_path": args.transformer_path,
             "autoencoder_path": args.autoencoder_path,
             "inference_only": args.inference_only,
-            "get_max_face_count": dataset.get_max_face_count(),
             "autoencoder_learning_rate": args.autoencoder_learning_rate,
             "transformer_learning_rate": args.transformer_learning_rate,
             "architecture": "MeshGPT",
@@ -43,9 +41,10 @@ def main(args):
                 "decoder_depth": args.decoder_depth,
                 "num_discrete_coors": args.num_discrete_coors,
             },
-            "dataset_size": dataset.__len__(),
         },
     )
+    dataset = MeshDataset(dataset_directory, data_augment)
+
     if not args.inference_only:
         if args.autoencoder_path:
             autoencoder = MeshAutoencoder(
@@ -119,7 +118,6 @@ def train_transformer(autoencoder, run, dataset, device, seq_len):
         learning_rate=wandb.config.transformer_learning_rate,
         use_wandb_tracking=True,
     )
-
     transformer_trainer.train(run.config.transformer_train)
 
     current_time = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
@@ -182,7 +180,7 @@ def process_mesh_data(run, device, transformer):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_directory", default="dataset/unit_test")
+    parser.add_argument("--dataset_directory")
     parser.add_argument("--data_augment", type=int, default=2)
     parser.add_argument("--autoencoder_learning_rate", type=float, default=0.4)
     parser.add_argument("--transformer_learning_rate", type=float, default=0.2)
@@ -199,6 +197,12 @@ if __name__ == "__main__":
     parser.add_argument("--autoencoder_path")
     parser.add_argument("--transformer_path")
     parser.add_argument("--num_quantizers", type=int, default=2)
+    parser.add_argument("--test_mode", action='store_true')
     args = parser.parse_args()
+
+    if args.test_mode:
+        args.autoencoder_train = 1
+        args.transformer_train = 1
+        args.dataset_directory = "dataset/unit_test"
 
     main(args)
