@@ -16,7 +16,7 @@ def main(args):
     dataset_directory = args.dataset_directory
     data_augment = args.data_augment
     dataset = MeshDataset(dataset_directory, data_augment)
-    autoencoder = None    
+    autoencoder = None
 
     run = wandb.init(
         project="meshgpt-pytorch",
@@ -55,7 +55,7 @@ def main(args):
                 decoder_depth=run.config.autoencoder["decoder_depth"],
                 num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
             ).to(device)
-            autoencoder.init_and_load_from(run.config.mesh_autoencoder_path)
+            autoencoder.init_and_load(run.config.autoencoder_path)
         else:
             autoencoder = MeshAutoencoder(
                 dim=run.config.autoencoder["dim"],
@@ -64,7 +64,7 @@ def main(args):
                 num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
             ).to(device)
             train_autoencoder(run, dataset, autoencoder)
-    
+
     seq_len = dataset.get_max_face_count() * 3 * run.config.num_quantizers
     print(f"Sequence length: {seq_len}")
     transformer = None
@@ -189,8 +189,8 @@ if __name__ == "__main__":
     parser.add_argument("--data_augment", type=int, default=2)
     parser.add_argument("--autoencoder_learning_rate", type=float, default=0.4)
     parser.add_argument("--transformer_learning_rate", type=float, default=0.2)
-    parser.add_argument("--autoencoder_train", type=int, default=200) # 200
-    parser.add_argument("--transformer_train", type=int, default=375) # 375
+    parser.add_argument("--autoencoder_train", type=int, default=1) # 200
+    parser.add_argument("--transformer_train", type=int, default=1) # 375
     parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--grad_accum_every", type=int, default=1)
     parser.add_argument("--checkpoint_every", type=int, default=1)
