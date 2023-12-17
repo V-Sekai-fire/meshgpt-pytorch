@@ -189,8 +189,8 @@ if __name__ == "__main__":
     parser.add_argument("--data_augment", type=int, default=2)
     parser.add_argument("--autoencoder_learning_rate", type=float, default=0.4)
     parser.add_argument("--transformer_learning_rate", type=float, default=0.2)
-    parser.add_argument("--autoencoder_train", type=int, default=200) # 200
-    parser.add_argument("--transformer_train", type=int, default=275) # 375
+    parser.add_argument("--autoencoder_train", type=int, default=300) # 200
+    parser.add_argument("--transformer_train", type=int, default=500) # 375
     parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--grad_accum_every", type=int, default=1)
     parser.add_argument("--checkpoint_every", type=int, default=1)
