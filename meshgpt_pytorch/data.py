@@ -11,6 +11,7 @@ import numpy as np
 from numpy.lib.format import open_memmap
 
 from einops import rearrange, reduce
+from torch import nn, Tensor
 
 from beartype import beartype
 from beartype.typing import Tuple, List, Union, Optional, Callable, Dict, Callable
@@ -153,42 +154,6 @@ def cache_text_embeds_for_dataset(
         return dataset_klass
 
     return inner
-
-# dataset
-
-class DatasetFromTransforms(Dataset):
-    @beartype
-    def __init__(
-        self,
-        folder: str,
-        transforms: Dict[str, Callable[[Path], Tuple[Vertices, Faces]]],
-        data_kwargs: Optional[List[str]] = None,
-        augment_fn: Callable = identity
-    ):
-        folder = Path(folder)
-        assert folder.exists and folder.is_dir()
-        self.folder = folder
-
-        exts = transforms.keys()
-        self.paths = [p for ext in exts for p in folder.glob(f'**/*.{ext}')]
-
-        print(f'{len(self.paths)} training samples found at {folder}')
-        assert len(self.paths) > 0
-
-        self.transforms = transforms
-        self.data_kwargs = data_kwargs
-        self.augment_fn = augment_fn
-
-    def __len__(self):
-        return len(self.paths)
-
-    def __getitem__(self, idx):
-        path = self.paths[idx]
-        ext = path.suffix[1:]
-        fn = self.transforms[ext]
-
-        out = fn(path)
-        return self.augment_fn(out)
 
 # tensor helper functions
 

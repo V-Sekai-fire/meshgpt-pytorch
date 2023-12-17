@@ -8,8 +8,3 @@ from meshgpt_pytorch.trainer import (
     MeshAutoencoderTrainer,
     MeshTransformerTrainer
 )
-
-from meshgpt_pytorch.data import (
-    DatasetFromTransforms,
-    cache_text_embeds_for_dataset
-)
