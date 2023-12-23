@@ -36,9 +36,6 @@ def main(args):
             "device": str(device),
             "num_quantizers": args.num_quantizers,
             "autoencoder": {
-                "dim": args.dim,
-                "encoder_depth": args.encoder_depth,
-                "decoder_depth": args.decoder_depth,
                 "num_discrete_coors": args.num_discrete_coors,
             },
         },
@@ -49,17 +46,11 @@ def main(args):
         if args.autoencoder_path:
             autoencoder = MeshAutoencoder(
                 num_quantizers=run.config.num_quantizers,
-                dim=run.config.autoencoder["dim"],
-                encoder_depth=run.config.autoencoder["encoder_depth"],
-                decoder_depth=run.config.autoencoder["decoder_depth"],
                 num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
             ).to(device)
             autoencoder.init_and_load(run.config.autoencoder_path)
         else:
             autoencoder = MeshAutoencoder(
-                dim=run.config.autoencoder["dim"],
-                encoder_depth=run.config.autoencoder["encoder_depth"],
-                decoder_depth=run.config.autoencoder["decoder_depth"],
                 num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
             ).to(device)
             train_autoencoder(run, dataset, autoencoder)
@@ -70,7 +61,6 @@ def main(args):
     if args.inference_only:
         transformer = MeshTransformer(
             autoencoder,
-            dim=run.config.autoencoder["dim"],
             max_seq_len=seq_len,
         ).to(device)
         transformer.load(run.config.transformer_path)
@@ -103,7 +93,6 @@ from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
 def train_transformer(autoencoder, run, dataset, device, seq_len):
     transformer = MeshTransformer(
         autoencoder,
-        dim=run.config.autoencoder["dim"],
         max_seq_len=seq_len,
     ).to(device)
 
@@ -198,12 +187,6 @@ if __name__ == "__main__":
                         help="Gradient accumulation steps. Default is 1.")
     parser.add_argument("--checkpoint_every", type=int, default=60, 
                         help="Save a checkpoint every N steps. Default is 60.")
-    parser.add_argument("--dim", type=int, default=1024, 
-                        help="Dimensionality of the model. Default is 1024.")
-    parser.add_argument("--encoder_depth", type=int, default=6, 
-                        help="Depth of the encoder. Default is 6.")
-    parser.add_argument("--decoder_depth", type=int, default=6, 
-                        help="Depth of the decoder. Default is 6.")
     parser.add_argument("--num_discrete_coors", type=int, default=1024, 
                         help="Number of discrete coordinates. Default is 1024.")
     parser.add_argument("--inference_only", action='store_true', 

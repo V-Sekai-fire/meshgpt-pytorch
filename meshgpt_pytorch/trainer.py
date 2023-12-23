@@ -346,16 +346,9 @@ class MeshAutoencoderTrainer(Module):
                     loss = self.model(**forward_kwargs)
                     self.accelerator.backward(loss)
 
-                if exists(self.max_grad_norm):
-                    self.accelerator.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
-
                 self.optimizer.step()
                 self.optimizer.zero_grad()
 
-                if not self.accelerator.optimizer_step_was_skipped:
-                    with self.warmup.dampening():
-                        self.scheduler.step()
- 
                 current_loss = loss.item()
                 total_loss += current_loss
                 num_batches += 1
@@ -639,16 +632,9 @@ class MeshTransformerTrainer(Module):
                     loss = self.model(**forward_kwargs)
                     self.accelerator.backward(loss)
 
-                if exists(self.max_grad_norm):
-                    self.accelerator.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
-
                 self.optimizer.step()
                 self.optimizer.zero_grad()
 
-                if not self.accelerator.optimizer_step_was_skipped:
-                    with self.warmup.dampening():
-                        self.scheduler.step()
- 
                 current_loss = loss.item()
                 total_loss += current_loss
                 num_batches += 1
