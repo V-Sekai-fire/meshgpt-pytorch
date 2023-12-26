@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import Dataset
+from meshgpt_pytorch.data import derive_face_edges_from_faces
 import os
 import json
 import trimesh
@@ -129,6 +130,11 @@ class MeshDataset(Dataset):
         return len(self.filter_files()) * self.augments_per_item
 
     @staticmethod
+    def snake_to_sentence_case(snake_str):
+        components = snake_str.split('_')
+        return ' '.join(word.capitalize() for word in components)
+
+    @staticmethod
     def compare_vertices(vertex_a, vertex_b):
         # glTF uses right-handed coordinate system (Y-Z-X).
         # Y is up and is different from the meshgpt paper.
@@ -255,25 +261,20 @@ class MeshDataset(Dataset):
 
         return new_vertices, new_faces
 
-    def get_item_labels(self):
-        files = self.filter_files()
-        labels = []
-        for idx in range(self.__len__()):
-            file_idx = idx // self.augments_per_item
-            file_name = files[file_idx]
-        return labels
 
     def __getitem__(self, idx):
         files = self.filter_files()
         file_idx = idx // self.augments_per_item
         file_name = files[file_idx]
+        file_name_without_ext = os.path.splitext(file_name)[0]
+        text = MeshDataset.snake_to_sentence_case(file_name_without_ext)
 
         all_faces, all_vertices, augment_idx = self.load_and_process_scene(idx)
         new_vertices, new_faces = self.create_new_vertices_and_faces(
             all_faces, all_vertices
         )
 
-        return self.augment_mesh(
+        vertices, faces = self.augment_mesh(
             (
                 torch.tensor(new_vertices, dtype=torch.float),
                 torch.tensor(new_faces, dtype=torch.long),
@@ -281,6 +282,8 @@ class MeshDataset(Dataset):
             self.augments_per_item,
             augment_idx,
         )
+        return vertices, faces, text
+
 
     def augment_mesh(self, base_mesh, augment_count, augment_idx):
         # Set the random seed for reproducibility
@@ -354,10 +357,6 @@ class TestMeshDataset(unittest.TestCase):
             self.dataset.convert_to_glb(
                 mesh, f"unit_augment/mesh_{str(i).zfill(2)}.glb"
             )
-
-    def test_mesh_labels(self):
-        labels = self.dataset.get_item_labels()
-        print(f"labels: {labels}")
 
 
 if __name__ == "__main__":

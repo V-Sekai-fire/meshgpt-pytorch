@@ -66,7 +66,8 @@ def main(args):
         transformer.load(run.config.transformer_path)
     else:
         transformer = train_transformer(autoencoder, run, dataset, device, seq_len)
-    process_mesh_data(run, device, transformer)
+    texts = args.texts.split(',')
+    process_mesh_data(run, device, transformer, texts)
 
 def train_autoencoder(run, dataset, autoencoder):
 
@@ -113,8 +114,8 @@ def train_transformer(autoencoder, run, dataset, device, seq_len):
     transformer_trainer.save(f"checkpoints/mesh_transformer_{os.path.basename(run.config.dataset_directory)}_{current_time}.pt")
     return transformer
 
-def process_mesh_data(run, device, transformer):
-    codes = transformer.generate(return_codes=True, texts=["cat"])
+def process_mesh_data(run, device, transformer, texts):
+    codes = transformer.generate(return_codes=True, texts=texts)
 
     transformer.autoencoder.eval()
 
@@ -199,11 +200,14 @@ if __name__ == "__main__":
                         help="Number of quantizers for the autoencoder. Default is 2.")
     parser.add_argument("--test_mode", action='store_true', 
                         help="If set, the script will run in test mode with reduced training steps and a fixed dataset directory.")
+    parser.add_argument("--texts", type=str, 
+                        help="Comma-separated list of texts to generate meshes for.")
     args = parser.parse_args()
 
     if args.test_mode:
         args.autoencoder_train = 1
         args.transformer_train = 1
-        args.dataset_directory = "dataset/unit_test"
+        args.dataset_directory = "dataset/cube_test"
+        args.texts = "sphere"
 
     main(args)
