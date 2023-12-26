@@ -210,7 +210,7 @@ if __name__ == "__main__":
                         help="Number of training steps for the autoencoder. Default is 600.")
     parser.add_argument("--transformer_train", type=int, default=600, 
                         help="Number of training steps for the transformer. Default is 600.")
-    parser.add_argument("--batch_size", type=int, default=2, 
+    parser.add_argument("--batch_size", type=int, default=4, 
                         help="Batch size for training. Default is 2.")
     parser.add_argument("--grad_accum_every", type=int, default=1, 
                         help="Gradient accumulation steps. Default is 1.")
