@@ -25,6 +25,29 @@ def load_mesh_process_export(file_path, output_path, file_type):
     mesh.export(output_path, file_type=file_type)
 
 
+import trimesh
+import numpy as np
+
+
+def compute_chamfer_distance(mesh1_path, mesh2_path):
+    # Load the meshes
+    mesh1 = trimesh.load_mesh(mesh1_path)
+    mesh2 = trimesh.load_mesh(mesh2_path)
+
+    # Get the point clouds
+    points1 = mesh1.sample(10000) # Sample 10000 points from mesh1
+    points2 = mesh2.sample(10000) # Sample 10000 points from mesh2
+
+    # Compute the nearest neighbors
+    distances1, _ = trimesh.proximity.closest_point(mesh1, points2)
+    distances2, _ = trimesh.proximity.closest_point(mesh2, points1)
+
+    # Compute the chamfer distance
+    chamfer_distance = np.mean(distances1) + np.mean(distances2)
+
+    return chamfer_distance
+
+
 def process_glb_file(glb_path, output_glb_path, setup_type):
     import numpy as np
 
@@ -80,3 +103,5 @@ if __name__ == "__main__":
     glb_path = os.path.normpath(args.input)
     output_glb_path = os.path.normpath(args.output)
     process_glb_file(glb_path, output_glb_path, args.setup_type)
+    chamfer_distance = compute_chamfer_distance(glb_path, output_glb_path)
+    print(f"Chamfer distance: {chamfer_distance}")
