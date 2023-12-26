@@ -27,44 +27,6 @@ def load_mesh_process_export(file_path, output_path, file_type):
 import trimesh
 import numpy as np
 
-def chamfer_distance(arr1, arr2):
-    distance_1_to_2 = 0
-    distance_2_to_1 = 0
-
-    points1 = np.column_stack((arr1['X'], arr1['Y'], arr1['Z']))
-    points2 = np.column_stack((arr2['X'], arr2['Y'], arr2['Z']))
-
-    for p1 in points1:
-        distances = np.sqrt(np.sum((points2 - p1)**2, axis=1))
-        min_distance = np.min(distances)
-        distance_1_to_2 += min_distance
-
-    for p2 in points2:
-        distances = np.sqrt(np.sum((points1 - p2)**2, axis=1))
-        min_distance = np.min(distances)
-        distance_2_to_1 += min_distance
-
-    return (distance_1_to_2 + distance_2_to_1) / (len(arr1) + len(arr2))
-
-def compute_chamfer_distance(mesh1_path, mesh2_path):
-    mesh1 = trimesh.load(mesh1_path)
-    mesh2 = trimesh.load(mesh2_path)
-
-    if isinstance(mesh1, trimesh.Scene):
-        mesh1 = mesh1.dump(concatenate=True)
-    if isinstance(mesh2, trimesh.Scene):
-        mesh2 = mesh2.dump(concatenate=True)
-
-    points1 = mesh1.sample(10000)
-    points2 = mesh2.sample(10000)
-
-    arr1 = np.core.records.fromarrays(points1.transpose(), names='X,Y,Z')
-    arr2 = np.core.records.fromarrays(points2.transpose(), names='X,Y,Z')
-
-    calculated_chamfer_distance = chamfer_distance(arr1, arr2)
-
-    return calculated_chamfer_distance
-
 
 def process_glb_file(glb_path, output_glb_path, setup_type):
     import numpy as np
@@ -121,5 +83,3 @@ if __name__ == "__main__":
     glb_path = os.path.normpath(args.input)
     output_glb_path = os.path.normpath(args.output)
     process_glb_file(glb_path, output_glb_path, args.setup_type)
-    chamfer_distance = compute_chamfer_distance(glb_path, output_glb_path)
-    print(f"Chamfer distance (Lower is better): {chamfer_distance}")
