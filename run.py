@@ -42,30 +42,30 @@ def main(args):
     )
     dataset = MeshDataset(dataset_directory, data_augment)
 
-    if not args.inference_only:
-        if args.autoencoder_path:
-            autoencoder = MeshAutoencoder(
-                num_quantizers=run.config.num_quantizers,
-                num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
-            ).to(device)
-            autoencoder.init_and_load(run.config.autoencoder_path)
-        else:
-            autoencoder = MeshAutoencoder(
-                num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
-            ).to(device)
-            train_autoencoder(run, dataset, autoencoder)
+    if args.autoencoder_path:
+        autoencoder = MeshAutoencoder(
+            num_quantizers=run.config.num_quantizers,
+            num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
+        ).to(device)
+        autoencoder.init_and_load(run.config.autoencoder_path)
+    else:
+        autoencoder = MeshAutoencoder(
+            num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
+        ).to(device)
+        train_autoencoder(run, dataset, autoencoder)
 
     seq_len = dataset.get_max_face_count() * 3 * run.config.num_quantizers
     print(f"Sequence length: {seq_len}")
     transformer = None
-    if args.inference_only:
+    if args.transformer_path:
         transformer = MeshTransformer(
             autoencoder,
             max_seq_len=seq_len,
         ).to(device)
         transformer.load(run.config.transformer_path)
-    else:
+    elif not args.inference_only:
         transformer = train_transformer(autoencoder, run, dataset, device, seq_len)
+
     texts = args.texts.split(',')
     process_mesh_data(run, device, transformer, texts)
 
@@ -95,6 +95,7 @@ def train_transformer(autoencoder, run, dataset, device, seq_len):
     transformer = MeshTransformer(
         autoencoder,
         max_seq_len=seq_len,
+        condition_on_text=True,
     ).to(device)
 
     transformer_trainer = MeshTransformerTrainer(
@@ -188,8 +189,8 @@ if __name__ == "__main__":
                         help="Gradient accumulation steps. Default is 1.")
     parser.add_argument("--checkpoint_every", type=int, default=60, 
                         help="Save a checkpoint every N steps. Default is 60.")
-    parser.add_argument("--num_discrete_coors", type=int, default=1024, 
-                        help="Number of discrete coordinates. Default is 1024.")
+    parser.add_argument("--num_discrete_coors", type=int, default=256, 
+                        help="Number of discrete coordinates. Default is 256.")
     parser.add_argument("--inference_only", action='store_true', 
                         help="If set, only inference will be performed.")
     parser.add_argument("--autoencoder_path", 
