@@ -324,8 +324,10 @@ class MeshAutoencoderTrainer(Module):
             self.wait()
 
         self.print('training complete')
+
     def train(self, num_epochs, diplay_graph = False):
         epoch_losses = []  # Initialize a list to store epoch losses
+        below_threshold_epochs = 0  # Initialize a counter for epochs where avg loss is below 0.3
         self.model.train() 
         for epoch in range(num_epochs): 
             total_loss = 0.0
@@ -340,7 +342,6 @@ class MeshAutoencoderTrainer(Module):
 
                 elif isinstance(data, dict): 
                     forward_kwargs = data 
-                
 
                 with self.accelerator.autocast():
                     loss = self.model(**forward_kwargs)
@@ -353,11 +354,18 @@ class MeshAutoencoderTrainer(Module):
                 total_loss += current_loss
                 num_batches += 1
                 progress_bar.set_postfix(loss=current_loss)
-                
-            
- 
+
             avg_epoch_loss = total_loss / num_batches 
             epoch_losses.append(avg_epoch_loss)
+
+            if avg_epoch_loss < 0.3:
+                below_threshold_epochs += 1
+            else:
+                below_threshold_epochs = 0  # Reset counter if avg loss is not below 0.3
+
+            if below_threshold_epochs >= 5:
+                print("Average loss has been below 0.3 for 5 consecutive epochs. Stopping training.")
+                break
             if len(epoch_losses) >= 4 and avg_epoch_loss > 0:
                 avg_loss_improvement = sum(epoch_losses[-4:-1]) / 3 - avg_epoch_loss
                 outStr = f'Epoch {epoch + 1} average loss: {avg_epoch_loss}           avg loss speed: {avg_loss_improvement}'
@@ -620,10 +628,11 @@ class MeshTransformerTrainer(Module):
             self.wait()
 
         self.print('training complete')
-        
+
     def train(self, num_epochs, diplay_graph = False):
         epoch_losses = []  # Initialize a list to store epoch losses
-        self.model.train()
+        below_threshold_epochs = 0  # Initialize a counter for epochs where avg loss is below 0.001
+        self.model.train() 
         for epoch in range(num_epochs): 
             total_loss = 0.0
             num_batches = 0
@@ -637,7 +646,6 @@ class MeshTransformerTrainer(Module):
 
                 elif isinstance(data, dict): 
                     forward_kwargs = data 
-                
 
                 with self.accelerator.autocast():
                     loss = self.model(**forward_kwargs)
@@ -650,9 +658,21 @@ class MeshTransformerTrainer(Module):
                 total_loss += current_loss
                 num_batches += 1
                 progress_bar.set_postfix(loss=current_loss)
- 
+
             avg_epoch_loss = total_loss / num_batches 
             epoch_losses.append(avg_epoch_loss)
+
+            # Check if avg loss is below 0.001
+            if avg_epoch_loss < 0.001:
+                below_threshold_epochs += 1
+            else:
+                below_threshold_epochs = 0  # Reset counter if avg loss is not below 0.001
+
+            # If avg loss has been below 0.001 for 5 consecutive epochs, stop training
+            if below_threshold_epochs >= 5:
+                print("Average loss has been below 0.001 for 5 consecutive epochs. Stopping training.")
+                break
+
             if len(epoch_losses) >= 4 and avg_epoch_loss > 0:
                 avg_loss_improvement = sum(epoch_losses[-4:-1]) / 3 - avg_epoch_loss
                 outStr = f'Epoch {epoch + 1} average loss: {avg_epoch_loss}           avg loss speed: {avg_loss_improvement}'
