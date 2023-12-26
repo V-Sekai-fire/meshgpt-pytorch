@@ -38,6 +38,7 @@ setup(
     'tqdm',
     'trimesh',
     'pymesh',
+    "rtree",
   ],
   classifiers=[
     'Development Status :: 4 - Beta',
