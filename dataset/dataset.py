@@ -347,16 +347,26 @@ import json
 class TestMeshDataset(unittest.TestCase):
     def setUp(self):
         self.augments = 3
-        self.dataset = MeshDataset("unit_test", self.augments)
+        self.dataset = MeshDataset("cube_test", self.augments)
 
     def test_mesh_augmentation(self):
         for i in range(self.augments):
-            mesh = [tensor.tolist() for tensor in self.dataset.__getitem__(i)]
-            with open(f"unit_augment/mesh_{str(i).zfill(2)}.json", "wb") as f:
-                f.write(json.dumps(mesh).encode())
-            self.dataset.convert_to_glb(
-                mesh, f"unit_augment/mesh_{str(i).zfill(2)}.glb"
-            )
+            item = self.dataset.__getitem__(i)
+            # Check if the item is a tuple of (tensor, tensor, string)
+            if isinstance(item, tuple) and len(item) == 3:
+                tensor1, tensor2, str_item = item
+                if isinstance(tensor1, (torch.Tensor, np.ndarray)) and isinstance(tensor2, (torch.Tensor, np.ndarray)):
+                    mesh1 = tensor1.tolist()
+                    mesh2 = tensor2.tolist()
+                    with open(f"unit_augment/mesh_{str(i).zfill(2)}.json", "wb") as f:
+                        f.write(json.dumps((mesh1, mesh2, str_item)).encode())
+                    self.dataset.convert_to_glb(
+                        (mesh1, mesh2, str_item), f"unit_augment/mesh_{str(i).zfill(2)}.glb"
+                    )
+                else:
+                    print(f"Item {i} in the dataset does not contain valid tensors.")
+            else:
+                print(f"Item {i} in the dataset is not a valid tuple.")
 
 
 if __name__ == "__main__":
