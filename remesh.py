@@ -46,7 +46,8 @@ def process_glb_file(glb_path, output_glb_path):
         ),
     ]
     with Pool(os.cpu_count()) as p:
-        results = p.map(run_command, commands)
+        for cmd in commands:
+            p.apply(run_command, (cmd,))
 
     remeshed_quadrangulation_smooth_obj_path = os.path.join(
         temp_dir,
