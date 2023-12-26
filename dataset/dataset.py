@@ -284,7 +284,7 @@ class MeshDataset(Dataset):
             self.augments_per_item,
             augment_idx,
         )
-        face_edges = derive_face_edges_from_faces(faces, pad_id = self.pad_id)
+        face_edges = derive_face_edges_from_faces(faces)
         return vertices, faces, face_edges, text
 
 
