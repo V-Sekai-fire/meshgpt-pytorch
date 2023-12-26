@@ -15,15 +15,16 @@ def run_command(cmd):
     print(f"Stderr: {stderr.decode('utf-8')}")
     return stdout, stderr
 
+import argparse
 
 def process_glb_file(glb_path, output_glb_path):
     obj_path = os.path.normpath(
-        "./temporary/" + glb_path.replace(".glb", "") + "_converted.obj"
+        "temporary/" + glb_path.replace(".glb", "") + "_converted.obj"
     )
-    output_base = obj_path.replace(".obj", "")
-    remeshed_p0_obj_path = output_base + "_rem_p0.obj"
+    output_base = os.path.normpath(obj_path.replace(".obj", ""))
+    remeshed_p0_obj_path = os.path.normpath(output_base + "_rem_p0.obj")
     target_quad_count = 1000
-    remeshed_quadrangulation_smooth_obj_path = (
+    remeshed_quadrangulation_smooth_obj_path = os.path.normpath(
         output_base + f"_rem_p0_{target_quad_count}_quadrangulation_smooth.obj"
     )
     mesh = trimesh.load(glb_path, force="mesh")
@@ -31,8 +32,8 @@ def process_glb_file(glb_path, output_glb_path):
     mesh.vertex_normals
     mesh.export(obj_path, file_type="obj")
     commands = [
-        f".\\thirdparty\quadwild_windows\quadwild.exe {obj_path} 2 thirdparty/quadwild_windows/config/prep_config/basic_setup_Mechanical.txt",
-        f".\\thirdparty\quadwild_windows\quad_from_patches.exe {remeshed_p0_obj_path} {target_quad_count} thirdparty/quadwild_windows/config/main_config/flow.txt {output_base}.json",
+        os.path.normpath(f"thirdparty\quadwild_windows\quadwild.exe {obj_path} 2 thirdparty/quadwild_windows/config/prep_config/basic_setup_Mechanical.txt"),
+        os.path.normpath(f"thirdparty\quadwild_windows\quad_from_patches.exe {remeshed_p0_obj_path} {target_quad_count} thirdparty/quadwild_windows/config/main_config/flow.txt {output_base}.json"),
     ]
     with Pool(os.cpu_count()) as p:
         results = p.map(run_command, commands)
@@ -42,17 +43,13 @@ def process_glb_file(glb_path, output_glb_path):
     mesh.vertex_normals
     mesh.export(output_glb_path, file_type="glb")
 
-
-import argparse
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process a GLB file.")
     parser.add_argument("input", type=str, help="Input GLB file path")
     args = parser.parse_args()
 
     glb_path = os.path.normpath(args.input)
-    output_glb_path = "./temporary/" + os.path.basename(glb_path).replace(
+    output_glb_path = os.path.normpath("./temporary/" + os.path.basename(glb_path).replace(
         ".glb", "_output.glb"
-    )
-    output_glb_path = os.path.normpath(output_glb_path)
+    ))
     process_glb_file(glb_path, output_glb_path)
