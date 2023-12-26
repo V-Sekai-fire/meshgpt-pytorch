@@ -201,8 +201,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MeshGPT PyTorch Training Script")
     parser.add_argument("--dataset_directory", default="dataset/blockmesh_test",
                         help="Path to the directory containing the dataset. Default is dataset/blockmesh_test.")   
-    parser.add_argument("--data_augment", type=int, default=2, 
-                        help="Number of data augmentations to apply. Default is 2.")
+    parser.add_argument("--data_augment", type=int, default=100, 
+                        help="Number of data augmentations to apply. Default is 100.")
     parser.add_argument("--autoencoder_learning_rate", type=float, default=0.4, 
                         help="Learning rate for the autoencoder. Default is 0.4.")
     parser.add_argument("--transformer_learning_rate", type=float, default=0.2, 
