@@ -22,6 +22,7 @@ def main(args):
         config={
             "transformer_path": args.transformer_path,
             "autoencoder_path": args.autoencoder_path,
+            "dim": 768,
             "inference_only": args.inference_only,
             "autoencoder_learning_rate": args.autoencoder_learning_rate,
             "transformer_learning_rate": args.transformer_learning_rate,
@@ -60,6 +61,7 @@ def main(args):
     if args.transformer_path:
         transformer = MeshTransformer(
             autoencoder,
+            dim=run.config.dim,
             max_seq_len=seq_len,
         ).to(device)
         transformer.load(run.config.transformer_path)
@@ -94,6 +96,7 @@ from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
 def train_transformer(autoencoder, run, dataset, device, seq_len):
     transformer = MeshTransformer(
         autoencoder,
+        dim=run.config.dim,
         max_seq_len=seq_len,
         condition_on_text=True,
     ).to(device)
@@ -179,16 +182,16 @@ if __name__ == "__main__":
                         help="Learning rate for the autoencoder. Default is 0.4.")
     parser.add_argument("--transformer_learning_rate", type=float, default=0.2, 
                         help="Learning rate for the transformer. Default is 0.2.")
-    parser.add_argument("--autoencoder_train", type=int, default=600, 
-                        help="Number of training steps for the autoencoder. Default is 600.")
-    parser.add_argument("--transformer_train", type=int, default=200, 
-                        help="Number of training steps for the transformer. Default is 125.")
+    parser.add_argument("--autoencoder_train", type=int, default=240, 
+                        help="Number of training steps for the autoencoder. Default is 240.")
+    parser.add_argument("--transformer_train", type=int, default=60, 
+                        help="Number of training steps for the transformer. Default is 60.")
     parser.add_argument("--batch_size", type=int, default=2, 
-                        help="Batch size for training. Default is 1.")
+                        help="Batch size for training. Default is 2.")
     parser.add_argument("--grad_accum_every", type=int, default=1, 
                         help="Gradient accumulation steps. Default is 1.")
-    parser.add_argument("--checkpoint_every", type=int, default=60, 
-                        help="Save a checkpoint every N steps. Default is 60.")
+    parser.add_argument("--checkpoint_every", type=int, default=1, 
+                        help="Save a checkpoint every N steps. Default is 1.")
     parser.add_argument("--num_discrete_coors", type=int, default=1024, 
                         help="Number of discrete coordinates. Default is 1024.")
     parser.add_argument("--inference_only", action='store_true', 

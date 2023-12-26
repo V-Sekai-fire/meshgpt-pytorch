@@ -1052,7 +1052,7 @@ class MeshTransformer(Module):
         self,
         autoencoder: Union[MeshAutoencoder, MeshDiscretizer],
         *,
-        dim: Union[int, Tuple[int, int]] = 512,
+        dim: Union[int, Tuple[int, int]] = 768,
         max_seq_len = 8192,
         flash_attn = True,
         attn_depth = 12,
