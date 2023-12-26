@@ -15,6 +15,7 @@ from abc import abstractmethod
 import os
 import random
 from scipy.spatial.transform import Rotation as R
+import igl
 
 
 class MeshDataset(Dataset):
@@ -263,6 +264,7 @@ class MeshDataset(Dataset):
 
         return new_vertices, new_faces
 
+
     @lru_cache(maxsize=None)
     def __getitem__(self, idx):
         files = self.filter_files()
@@ -270,12 +272,11 @@ class MeshDataset(Dataset):
         file_name = files[file_idx]
         file_name_without_ext = os.path.splitext(file_name)[0]
         text = MeshDataset.snake_to_sentence_case(file_name_without_ext)
-
+    
         all_faces, all_vertices, augment_idx = self.load_and_process_scene(idx)
         new_vertices, new_faces = self.create_new_vertices_and_faces(
             all_faces, all_vertices
         )
-
         vertices, faces = self.augment_mesh(
             (
                 torch.tensor(new_vertices, dtype=torch.float),
@@ -284,7 +285,17 @@ class MeshDataset(Dataset):
             self.augments_per_item,
             augment_idx,
         )
+    
+        vertices_np = vertices.numpy()
+        faces_np = faces.numpy()
+    
+        l, f =  (vertices_np, faces_np)
+    
+        vertices = torch.from_numpy(l)
+        faces = torch.from_numpy(f)
+
         face_edges = derive_face_edges_from_faces(faces)
+    
         return vertices, faces, face_edges, text
 
 
@@ -350,21 +361,22 @@ import json
 class TestMeshDataset(unittest.TestCase):
     def setUp(self):
         self.augments = 3
-        self.dataset = MeshDataset("cube_test", self.augments)
+        self.dataset = MeshDataset("blockmesh_test", self.augments)
 
     def test_mesh_augmentation(self):
         for i in range(self.augments):
             item = self.dataset.__getitem__(i)
-            # Check if the item is a tuple of (tensor, tensor, string)
-            if isinstance(item, tuple) and len(item) == 3:
-                tensor1, tensor2, str_item = item
-                if isinstance(tensor1, (torch.Tensor, np.ndarray)) and isinstance(tensor2, (torch.Tensor, np.ndarray)):
-                    mesh1 = tensor1.tolist()
-                    mesh2 = tensor2.tolist()
+            # Check if the item is a tuple of (tensor, tensor, tensor, string)
+            if isinstance(item, tuple) and len(item) == 4:
+                tensor1, tensor2, tensor3, str_item = item
+                if all(isinstance(tensor, (torch.Tensor, np.ndarray)) for tensor in [tensor1, tensor2, tensor3]):
+                    vertices = tensor1.tolist()
+                    faces = tensor2.tolist()
+                    face_edges = tensor3.tolist()
                     with open(f"unit_augment/mesh_{str(i).zfill(2)}.json", "wb") as f:
-                        f.write(json.dumps((mesh1, mesh2, str_item)).encode())
+                        f.write(json.dumps((vertices, faces, str_item)).encode())
                     self.dataset.convert_to_glb(
-                        (mesh1, mesh2, str_item), f"unit_augment/mesh_{str(i).zfill(2)}.glb"
+                        (vertices, faces), f"unit_augment/mesh_{str(i).zfill(2)}.glb"
                     )
                 else:
                     print(f"Item {i} in the dataset does not contain valid tensors.")

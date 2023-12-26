@@ -37,6 +37,7 @@ setup(
     'x-transformers>=1.26.0',
     'tqdm',
     'trimesh',
+    'pymesh',
   ],
   classifiers=[
     'Development Status :: 4 - Beta',
