@@ -18,22 +18,18 @@ def run_command(cmd):
 import argparse
 
 def process_glb_file(glb_path, output_glb_path):
-    obj_path = os.path.normpath(
-        "./temporary/" + glb_path.replace(".glb", "") + "_converted.obj"
-    )
-    output_base = os.path.normpath(obj_path.replace(".obj", ""))
-    remeshed_p0_obj_path = os.path.normpath(output_base + "_rem_p0.obj")
+    output_basename = os.path.splitext(os.path.basename(glb_path))[0]
+    remeshed_p0_obj_path = "temporary/" + output_basename + "_rem_p0.obj"
     target_quad_count = 1000
-    remeshed_quadrangulation_smooth_obj_path = os.path.normpath(
-        output_base + f"_rem_p0_{target_quad_count}_quadrangulation_smooth.obj"
-    )
+    remeshed_quadrangulation_smooth_obj_path = "temporary/" + output_basename + f"_rem_p0_{target_quad_count}_quadrangulation_smooth.obj"
     mesh = trimesh.load(glb_path, force="mesh")
     mesh.merge_vertices(4)
     mesh.vertex_normals
-    mesh.export(obj_path, file_type="obj")
+    output_path = "temporary/" + output_basename + ".obj"
+    mesh.export(output_path, file_type="obj")
     commands = [
-        os.path.normpath(f"./thirdparty/quadwild_windows/quadwild.exe {obj_path} 2 ./thirdparty/quadwild_windows/config/prep_config/basic_setup_Mechanical.txt"),
-        os.path.normpath(f"./thirdparty/quadwild_windows/quad_from_patches.exe {remeshed_p0_obj_path} {target_quad_count} ./thirdparty/quadwild_windows/config/main_config/flow.txt {output_base}.json"),
+        os.path.normpath(f"thirdparty/quadwild_windows/quadwild.exe {output_path} 2 thirdparty/quadwild_windows/config/prep_config/basic_setup_Mechanical.txt"),
+        os.path.normpath(f"thirdparty/quadwild_windows/quad_from_patches.exe {remeshed_p0_obj_path} {target_quad_count} thirdparty/quadwild_windows/config/main_config/flow.txt {output_path}.json"),
     ]
     with Pool(os.cpu_count()) as p:
         results = p.map(run_command, commands)
@@ -49,7 +45,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     glb_path = os.path.normpath(args.input)
-    output_glb_path = os.path.normpath("./temporary/" + os.path.basename(glb_path).replace(
-        ".glb", "_output.glb"
-    ))
-    process_glb_file(glb_path, output_glb_path)
+    output_glb_path = os.path.basename(glb_path) + "_output.glb"
+    process_glb_file(glb_path, "temporary/" + output_glb_path)
