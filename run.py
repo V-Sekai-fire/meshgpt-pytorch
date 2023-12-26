@@ -43,8 +43,8 @@ def main(args):
     )
     dataset = MeshDataset(dataset_directory, data_augment)
     seq_len = dataset.get_max_face_count() * 3 * run.config.num_quantizers
-    if seq_len < 8192:
-        seq_len = 8192
+    if seq_len < 8196:
+        seq_len = 8196
     if not args.inference_only:
 
         if args.autoencoder_path:
