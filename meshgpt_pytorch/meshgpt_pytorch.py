@@ -323,7 +323,7 @@ class GateLoopBlock(Module):
         self.gateloops = ModuleList([])
 
         for _ in range(depth):
-            gateloop = SimpleGateLoopLayer(dim = dim, use_heinsen = use_heinsen)
+            gateloop = SimpleGateLoopLayer(dim = dim)
             self.gateloops.append(gateloop)
 
     def forward(
