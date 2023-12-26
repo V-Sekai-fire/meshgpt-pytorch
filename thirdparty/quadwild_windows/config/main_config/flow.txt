@@ -5,7 +5,7 @@ gapLimit 0.0
 callbackTimeLimit 8 3.00 5.000 10.0 20.0 30.0 60.0 90.0 120.0
 callbackGapLimit 8 0.005 0.02 0.05 0.10 0.15 0.20 0.25 0.3
 minimumGap 0.4
-isometry 10
+isometry 0
 regularityQuadrilaterals 1
 regularityNonQuadrilaterals 1
 regularityNonQuadrilateralsWeight 0.9
