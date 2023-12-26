@@ -261,7 +261,6 @@ class MeshDataset(Dataset):
 
         return new_vertices, new_faces
 
-
     def __getitem__(self, idx):
         files = self.filter_files()
         file_idx = idx // self.augments_per_item
@@ -282,7 +281,8 @@ class MeshDataset(Dataset):
             self.augments_per_item,
             augment_idx,
         )
-        return vertices, faces, text
+        face_edges = derive_face_edges_from_faces(faces, pad_id = self.pad_id)
+        return vertices, faces, face_edges, text
 
 
     def augment_mesh(self, base_mesh, augment_count, augment_idx):
