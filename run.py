@@ -83,7 +83,7 @@ def main(args):
             transformer = MeshTransformer(
                 autoencoder,
                 dim=run.config.dim,
-                max_seq_len=4096 * 2 * 3,
+                max_seq_len=4096 * run.config.num_quantizers * 3,
                 condition_on_text=True,
             ).to(device)
             transformer.load(run.config.transformer_path)
