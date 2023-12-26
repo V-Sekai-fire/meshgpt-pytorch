@@ -51,6 +51,7 @@ def main(args):
         autoencoder.init_and_load(run.config.autoencoder_path)
     else:
         autoencoder = MeshAutoencoder(
+            num_quantizers=run.config.num_quantizers,
             num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
         ).to(device)
         train_autoencoder(run, dataset, autoencoder)
@@ -63,6 +64,7 @@ def main(args):
             autoencoder,
             dim=run.config.dim,
             max_seq_len=seq_len,
+            condition_on_text=True,
         ).to(device)
         transformer.load(run.config.transformer_path)
     elif not args.inference_only:
@@ -96,8 +98,8 @@ from meshgpt_pytorch import MeshTransformer, MeshTransformerTrainer
 def train_transformer(autoencoder, run, dataset, device, seq_len):
     transformer = MeshTransformer(
         autoencoder,
-        dim=run.config.dim,
         max_seq_len=seq_len,
+        dim=run.config.dim,
         condition_on_text=True,
     ).to(device)
 
