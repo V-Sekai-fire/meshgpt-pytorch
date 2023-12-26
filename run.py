@@ -52,7 +52,7 @@ def main(args):
                 num_quantizers=run.config.num_quantizers,
                 num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
             ).to(device)
-            autoencoder.init_and_load(run.config.autoencoder_path)
+            autoencoder.init_and_load(run.config.autoencoder_path, strict = False)
         else:
             autoencoder = MeshAutoencoder(
                 num_quantizers=run.config.num_quantizers,
