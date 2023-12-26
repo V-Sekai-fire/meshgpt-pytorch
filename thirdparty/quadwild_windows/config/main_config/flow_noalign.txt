@@ -19,5 +19,5 @@ hardParityConstraint 1
 scaleFact 2
 fixedChartClusters 0
 useFlowSolver 1
-flow_config_filename "config/main_config/flow_virtual_simple.json"
-satsuma_config_filename "config/satsuma/default.json"
+flow_config_filename "thirdparty/quadwild_windows/config/main_config/flow_virtual_simple.json"
+satsuma_config_filename "thirdparty/quadwild_windows/config/satsuma/default.json"
