@@ -391,14 +391,6 @@ class MeshAutoencoderTrainer(Module):
  
 
         self.print('Training complete') 
-        if diplay_graph:
-            plt.figure(figsize=(10, 5))
-            plt.plot(range(1, num_epochs + 1), epoch_losses, marker='o')
-            plt.title('Training Loss Over Epochs')
-            plt.xlabel('Epoch')
-            plt.ylabel('Average Loss')
-            plt.grid(True)
-            plt.show()
 # mesh transformer trainer
 
 @add_wandb_tracker_contextmanager()
