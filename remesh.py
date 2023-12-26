@@ -25,7 +25,7 @@ def load_mesh_process_export(file_path, output_path, file_type):
     mesh.export(output_path, file_type=file_type)
 
 
-def process_glb_file(glb_path, output_glb_path):
+def process_glb_file(glb_path, output_glb_path, setup_type):
     import numpy as np
 
     output_basename = os.path.splitext(os.path.basename(glb_path))[0]
@@ -37,9 +37,16 @@ def process_glb_file(glb_path, output_glb_path):
     source_file_second_stage = os.path.normpath(
         os.path.join(temp_dir, f"{output_basename}_rem_p0.obj")
     )
+
+    config_file = (
+        "basic_setup_Mechanical.txt"
+        if setup_type == "mechanical"
+        else "basic_setup_Organic.txt"
+    )
+
     commands = [
         os.path.normpath(
-            f"./thirdparty/quadwild_windows/quadwild {source_file} 2 thirdparty/quadwild_windows/config/prep_config/basic_setup_Mechanical.txt"
+            f"./thirdparty/quadwild_windows/quadwild {source_file} 2 thirdparty/quadwild_windows/config/prep_config/{config_file}"
         ),
         os.path.normpath(
             f"./thirdparty/quadwild_windows/quad_from_patches {source_file_second_stage} {target_quad_count} thirdparty/quadwild_windows/config/main_config/flow.txt"
@@ -62,8 +69,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process a GLB file.")
     parser.add_argument("input", type=str, help="Input GLB file path")
     parser.add_argument("output", type=str, help="Output GLB file path")
+    parser.add_argument(
+        "setup_type",
+        type=str,
+        choices=["mechanical", "organic"],
+        help="Type of setup (mechanical or organic)",
+    )
     args = parser.parse_args()
 
     glb_path = os.path.normpath(args.input)
     output_glb_path = os.path.normpath(args.output)
-    process_glb_file(glb_path, output_glb_path)
+    process_glb_file(glb_path, output_glb_path, args.setup_type)
