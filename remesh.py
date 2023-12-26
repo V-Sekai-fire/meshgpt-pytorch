@@ -42,9 +42,9 @@ def process_glb_file(glb_path, output_glb_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process a GLB file.")
     parser.add_argument("input", type=str, help="Input GLB file path")
-    parser.add_argument("output", type=str, help="Input GLB file path")
+    parser.add_argument("output", type=str, help="Output GLB file path")
     args = parser.parse_args()
 
     glb_path = os.path.normpath(args.input)
-    output_glb_path = os.path.basename(args.output)
+    output_glb_path = os.path.normpath(args.output)
     process_glb_file(glb_path, output_glb_path)
