@@ -179,7 +179,7 @@ if __name__ == "__main__":
     parser.add_argument("--data_augment", type=int, default=2, 
                         help="Number of data augmentations to apply. Default is 2.")
     parser.add_argument("--autoencoder_learning_rate", type=float, default=0.2, 
-                        help="Learning rate for the autoencoder. Default is 0.4.")
+                        help="Learning rate for the autoencoder. Default is 0.2.")
     parser.add_argument("--transformer_learning_rate", type=float, default=0.2, 
                         help="Learning rate for the transformer. Default is 0.2.")
     parser.add_argument("--autoencoder_train", type=int, default=240, 
