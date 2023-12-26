@@ -41,34 +41,55 @@ def main(args):
             },
         },
     )
-    dataset = MeshDataset(dataset_directory, data_augment)
 
-    if args.autoencoder_path:
-        autoencoder = MeshAutoencoder(
-            num_quantizers=run.config.num_quantizers,
-            num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
-        ).to(device)
-        autoencoder.init_and_load(run.config.autoencoder_path)
+    if not args.inference_only:
+
+        if args.autoencoder_path:
+            autoencoder = MeshAutoencoder(
+                num_quantizers=run.config.num_quantizers,
+                num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
+            ).to(device)
+            autoencoder.init_and_load(run.config.autoencoder_path)
+        else:
+            autoencoder = MeshAutoencoder(
+                num_quantizers=run.config.num_quantizers,
+                num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
+            ).to(device)
+            dataset = MeshDataset(dataset_directory, data_augment)
+            train_autoencoder(run, dataset, autoencoder)
+
+        dataset = MeshDataset(dataset_directory, data_augment)
+        seq_len = dataset.get_max_face_count() * 3 * run.config.num_quantizers
+        transformer = None
+        if args.transformer_path:
+            print(f"Sequence length: {seq_len}")
+            transformer = MeshTransformer(
+                autoencoder,
+                dim=run.config.dim,
+                max_seq_len=seq_len,
+                condition_on_text=True,
+            ).to(device)
+            transformer.load(run.config.transformer_path)
+        else:
+            transformer = train_transformer(autoencoder, run, dataset, device, seq_len)
     else:
-        autoencoder = MeshAutoencoder(
-            num_quantizers=run.config.num_quantizers,
-            num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
-        ).to(device)
-        train_autoencoder(run, dataset, autoencoder)
+        if args.autoencoder_path and args.transformer_path:
+            autoencoder = MeshAutoencoder(
+                num_quantizers=run.config.num_quantizers,
+                num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
+            ).to(device)
+            autoencoder.init_and_load(run.config.autoencoder_path)
 
-    seq_len = dataset.get_max_face_count() * 3 * run.config.num_quantizers
-    print(f"Sequence length: {seq_len}")
-    transformer = None
-    if args.transformer_path:
-        transformer = MeshTransformer(
-            autoencoder,
-            dim=run.config.dim,
-            max_seq_len=seq_len,
-            condition_on_text=True,
-        ).to(device)
-        transformer.load(run.config.transformer_path)
-    elif not args.inference_only:
-        transformer = train_transformer(autoencoder, run, dataset, device, seq_len)
+            transformer = MeshTransformer(
+                autoencoder,
+                dim=run.config.dim,
+                max_seq_len=4096 * 2 * 3,
+                condition_on_text=True,
+            ).to(device)
+            transformer.load(run.config.transformer_path)
+        else:
+            print("Both autoencoder and transformer paths must be provided for inference.")
+            return
 
     texts = args.texts.split(',')
     process_mesh_data(run, device, transformer, texts)
@@ -176,7 +197,7 @@ def process_mesh_data(run, device, transformer, texts):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MeshGPT PyTorch Training Script")
-    parser.add_argument("--dataset_directory", required=True, 
+    parser.add_argument("--dataset_directory", 
                         help="Path to the directory containing the dataset.")   
     parser.add_argument("--data_augment", type=int, default=2, 
                         help="Number of data augmentations to apply. Default is 2.")
