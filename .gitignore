@@ -184,3 +184,5 @@ dataset/unit_augment/mesh_01.json
 dataset/unit_augment/mesh_02.glb
 
 dataset/unit_augment/mesh_02.json
+
+dataset/temporary/*

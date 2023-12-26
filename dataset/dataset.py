@@ -264,7 +264,6 @@ class MeshDataset(Dataset):
 
         return new_vertices, new_faces
 
-
     @lru_cache(maxsize=None)
     def __getitem__(self, idx):
         files = self.filter_files()
