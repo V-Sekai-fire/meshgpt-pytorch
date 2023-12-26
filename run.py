@@ -22,7 +22,7 @@ def main(args):
         config={
             "transformer_path": args.transformer_path,
             "autoencoder_path": args.autoencoder_path,
-            "dim": 768,
+            "dim": 512,
             "inference_only": args.inference_only,
             "autoencoder_learning_rate": args.autoencoder_learning_rate,
             "transformer_learning_rate": args.transformer_learning_rate,
