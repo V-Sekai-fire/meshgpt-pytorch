@@ -1096,7 +1096,7 @@ class MeshTransformer(Module):
         self.quantize_level_embed = nn.Parameter(torch.randn(self.num_quantizers, dim))
         self.vertex_embed = nn.Parameter(torch.randn(3, dim))
 
-        self.abs_pos_emb = nn.Embedding(372, dim)
+        self.abs_pos_emb = nn.Embedding(max_seq_len, dim)
 
         self.max_seq_len = max_seq_len
 

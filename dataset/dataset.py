@@ -282,6 +282,7 @@ class MeshDataset(Dataset):
             self.augments_per_item,
             augment_idx,
         )
+        print(text)
         return vertices, faces, text
 
 

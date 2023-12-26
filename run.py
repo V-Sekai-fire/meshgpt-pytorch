@@ -41,7 +41,10 @@ def main(args):
             },
         },
     )
-
+    dataset = MeshDataset(dataset_directory, data_augment)
+    seq_len = dataset.get_max_face_count() * 3 * run.config.num_quantizers
+    if seq_len < 8192:
+        seq_len = 8192
     if not args.inference_only:
 
         if args.autoencoder_path:
@@ -58,8 +61,6 @@ def main(args):
             dataset = MeshDataset(dataset_directory, data_augment)
             train_autoencoder(run, dataset, autoencoder)
 
-        dataset = MeshDataset(dataset_directory, data_augment)
-        seq_len = dataset.get_max_face_count() * 3 * run.config.num_quantizers
         transformer = None
         if args.transformer_path:
             print(f"Sequence length: {seq_len}")
@@ -83,7 +84,7 @@ def main(args):
             transformer = MeshTransformer(
                 autoencoder,
                 dim=run.config.dim,
-                max_seq_len=4096 * run.config.num_quantizers * 3,
+                max_seq_len=seq_len,
                 condition_on_text=True,
             ).to(device)
             transformer.load(run.config.transformer_path)
@@ -197,8 +198,8 @@ def process_mesh_data(run, device, transformer, texts):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MeshGPT PyTorch Training Script")
-    parser.add_argument("--dataset_directory", 
-                        help="Path to the directory containing the dataset.")   
+    parser.add_argument("--dataset_directory", default="dataset/blockmesh_test",
+                        help="Path to the directory containing the dataset. Default is dataset/blockmesh_test.")   
     parser.add_argument("--data_augment", type=int, default=2, 
                         help="Number of data augmentations to apply. Default is 2.")
     parser.add_argument("--autoencoder_learning_rate", type=float, default=0.2, 
@@ -234,7 +235,5 @@ if __name__ == "__main__":
     if args.test_mode:
         args.autoencoder_train = 1
         args.transformer_train = 1
-        args.dataset_directory = "dataset/cube_test"
-        args.texts = "sphere"
 
     main(args)
