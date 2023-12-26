@@ -32,8 +32,8 @@ def process_glb_file(glb_path, output_glb_path):
     mesh.vertex_normals
     mesh.export(obj_path, file_type="obj")
     commands = [
-        os.path.normpath(f"thirdparty/quadwild_windows/quadwild.exe {obj_path} 2 ./thirdparty/quadwild_windows/config/prep_config/basic_setup_Mechanical.txt"),
-        os.path.normpath(f"thirdparty/quadwild_windows/quad_from_patches.exe {remeshed_p0_obj_path} {target_quad_count} ./thirdparty/quadwild_windows/config/main_config/flow.txt {output_base}.json"),
+        os.path.normpath(f"./thirdparty/quadwild_windows/quadwild.exe {obj_path} 2 ./thirdparty/quadwild_windows/config/prep_config/basic_setup_Mechanical.txt"),
+        os.path.normpath(f"./thirdparty/quadwild_windows/quad_from_patches.exe {remeshed_p0_obj_path} {target_quad_count} ./thirdparty/quadwild_windows/config/main_config/flow.txt {output_base}.json"),
     ]
     with Pool(os.cpu_count()) as p:
         results = p.map(run_command, commands)
