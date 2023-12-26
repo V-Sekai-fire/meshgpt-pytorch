@@ -53,12 +53,13 @@ def main(args):
                 num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
             ).to(device)
             autoencoder.init_and_load(run.config.autoencoder_path, strict = False)
+            if args.continue_train:
+                train_autoencoder(run, dataset, autoencoder)
         else:
             autoencoder = MeshAutoencoder(
                 num_quantizers=run.config.num_quantizers,
                 num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
             ).to(device)
-            dataset = MeshDataset(dataset_directory, data_augment)
             train_autoencoder(run, dataset, autoencoder)
 
         transformer = None
@@ -230,6 +231,8 @@ if __name__ == "__main__":
                         help="If set, the script will run in test mode with reduced training steps and a fixed dataset directory.")
     parser.add_argument("--texts", type=str, 
                         help="Comma-separated list of texts to generate meshes for.")
+    parser.add_argument("--continue_train", action='store_true', 
+                        help="If set, continue training from the last checkpoint.")
     args = parser.parse_args()
 
     if args.test_mode:
