@@ -181,16 +181,16 @@ if __name__ == "__main__":
                         help="Learning rate for the transformer. Default is 0.2.")
     parser.add_argument("--autoencoder_train", type=int, default=600, 
                         help="Number of training steps for the autoencoder. Default is 600.")
-    parser.add_argument("--transformer_train", type=int, default=500, 
-                        help="Number of training steps for the transformer. Default is 500.")
+    parser.add_argument("--transformer_train", type=int, default=200, 
+                        help="Number of training steps for the transformer. Default is 125.")
     parser.add_argument("--batch_size", type=int, default=2, 
                         help="Batch size for training. Default is 1.")
     parser.add_argument("--grad_accum_every", type=int, default=1, 
                         help="Gradient accumulation steps. Default is 1.")
     parser.add_argument("--checkpoint_every", type=int, default=60, 
                         help="Save a checkpoint every N steps. Default is 60.")
-    parser.add_argument("--num_discrete_coors", type=int, default=256, 
-                        help="Number of discrete coordinates. Default is 256.")
+    parser.add_argument("--num_discrete_coors", type=int, default=1024, 
+                        help="Number of discrete coordinates. Default is 1024.")
     parser.add_argument("--inference_only", action='store_true', 
                         help="If set, only inference will be performed.")
     parser.add_argument("--autoencoder_path", 
