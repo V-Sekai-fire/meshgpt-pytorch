@@ -9,6 +9,8 @@ import sys
 import functools
 import wandb
 
+from functools import lru_cache
+
 from abc import abstractmethod
 import os
 import random
@@ -261,6 +263,7 @@ class MeshDataset(Dataset):
 
         return new_vertices, new_faces
 
+    @lru_cache(maxsize=None)
     def __getitem__(self, idx):
         files = self.filter_files()
         file_idx = idx // self.augments_per_item
