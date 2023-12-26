@@ -38,7 +38,7 @@ class MeshDataset(Dataset):
 
             self.log_mesh_details(file_name, total_faces_in_file)
 
-            max_faces = 4424
+            max_faces = 13408
             if total_faces_in_file > max_faces:
                 raise ValueError(
                     f"Mesh {file_name} has too many faces : {total_faces_in_file} / {max_faces}"
