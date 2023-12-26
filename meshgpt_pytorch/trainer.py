@@ -365,6 +365,7 @@ class MeshAutoencoderTrainer(Module):
 
             if below_threshold_epochs >= 5:
                 print("Average loss has been below 0.3 for 5 consecutive epochs. Stopping training.")
+                self.save(self.checkpoint_folder / f'mesh-autoencoder.ckpt.epoch_{epoch}_avg_loss_{avg_epoch_loss:.3f}.pt')
                 break
             if len(epoch_losses) >= 4 and avg_epoch_loss > 0:
                 avg_loss_improvement = sum(epoch_losses[-4:-1]) / 3 - avg_epoch_loss
@@ -671,6 +672,7 @@ class MeshTransformerTrainer(Module):
             # If avg loss has been below 0.001 for 5 consecutive epochs, stop training
             if below_threshold_epochs >= 5:
                 print("Average loss has been below 0.001 for 5 consecutive epochs. Stopping training.")
+                self.save(self.checkpoint_folder / f'mesh-transformer.ckpt.epoch_{epoch}_avg_loss_{avg_epoch_loss:.3f}.pt')
                 break
 
             if len(epoch_losses) >= 4 and avg_epoch_loss > 0:
