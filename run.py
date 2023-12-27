@@ -501,7 +501,7 @@ class TestMeshDataset(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    device = torch.device("cuda")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     parser = argparse.ArgumentParser(description="MeshGPT PyTorch Training Script")
     parser.add_argument(
         "--dataset_directory",
@@ -656,7 +656,7 @@ if __name__ == "__main__":
             )
             for idx in range(len(idx_to_file_idx))
         ]
-        dataset = MeshDataset(data)
+        dataset = MeshDataset(data, device)
         dataset.save("mesh_dataset.npz")
     dataset.generate_face_edges()
 
