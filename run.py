@@ -82,9 +82,7 @@ def compare_faces(face_a, face_b, vertices):
         if face_a[i] >= len(vertices) or face_b[i] >= len(vertices):
             raise IndexError("Face index out of range")
 
-        vertex_comparison = compare_vertices(
-            vertices[face_a[i]], vertices[face_b[i]]
-        )
+        vertex_comparison = compare_vertices(vertices[face_a[i]], vertices[face_b[i]])
         if vertex_comparison != 0:
             return vertex_comparison
 
@@ -130,9 +128,7 @@ def load_and_process_scene(file_idx, files, folder_path, max_face_count):
         all_vertices.extend(vertices)
 
     all_faces.sort(
-        key=functools.cmp_to_key(
-            lambda a, b: compare_faces(a, b, all_vertices)
-        )
+        key=functools.cmp_to_key(lambda a, b: compare_faces(a, b, all_vertices))
     )
 
     total_faces_in_file = len(all_faces)
@@ -345,112 +341,6 @@ def generate_mesh_data(idx, idx_to_file_idx, files, folder_path, max_faces_allow
     }
 
 
-def main(args):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    dataset_directory = args.dataset_directory
-    data_augment = args.data_augment
-    autoencoder = None
-
-    run = wandb.init(
-        project="meshgpt-pytorch",
-        config={
-            "transformer_path": args.transformer_path,
-            "autoencoder_path": args.autoencoder_path,
-            "dim": 512,
-            "inference_only": args.inference_only,
-            "autoencoder_learning_rate": args.autoencoder_learning_rate,
-            "transformer_learning_rate": args.transformer_learning_rate,
-            "architecture": "MeshGPT",
-            "dataset_directory": dataset_directory,
-            "autoencoder_train": args.autoencoder_train,
-            "transformer_train": args.transformer_train,
-            "batch_size": args.batch_size,
-            "grad_accum_every": args.grad_accum_every,
-            "checkpoint_every": args.checkpoint_every,
-            "device": str(device),
-            "num_quantizers": args.num_quantizers,
-            "autoencoder": {
-                "num_discrete_coors": args.num_discrete_coors,
-            },
-        },
-    )
-
-    folder_path = args.dataset_directory
-    files = os.listdir(folder_path)
-    supported_formats = (".glb", ".gltf")
-    files = [file for file in os.listdir(folder_path) if os.path.splitext(file)[1] in supported_formats]
-    files = sorted(files)
-    max_faces_allowed = 1365
-    idx_to_file_idx = load_and_process_files(folder_path, supported_formats, max_faces_allowed)
-
-    if args.load_dataset:
-        dataset = MeshDataset.load('mesh_dataset.npz')
-    else:
-        data = [
-            generate_mesh_data(idx, idx_to_file_idx, files, folder_path, max_faces_allowed)
-            for idx in range(len(idx_to_file_idx))
-        ]
-        dataset = MeshDataset(data)
-        dataset.save('mesh_dataset.npz')
-    dataset.generate_face_edges()
-
-    seq_len = max_faces_allowed * 3 * run.config.num_quantizers
-    if seq_len < 8196:
-        seq_len = 8196
-    if not args.inference_only:
-        if args.autoencoder_path:
-            autoencoder = MeshAutoencoder(
-                num_quantizers=run.config.num_quantizers,
-                num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
-            ).to(device)
-            autoencoder.init_and_load(run.config.autoencoder_path, strict=False)
-            if args.continue_train:
-                train_autoencoder(run, dataset, autoencoder)
-        else:
-            autoencoder = MeshAutoencoder(
-                num_quantizers=run.config.num_quantizers,
-                num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
-            ).to(device)
-            train_autoencoder(run, dataset, autoencoder)
-        dataset.generate_codes(autoencoder)
-        transformer = None
-        if args.transformer_path:
-            print(f"Sequence length: {seq_len}")
-            transformer = MeshTransformer(
-                autoencoder,
-                dim=run.config.dim,
-                max_seq_len=seq_len,
-                condition_on_text=True,
-            ).to(device)
-            transformer.load(run.config.transformer_path)
-        else:
-            transformer = train_transformer(autoencoder, run, dataset, device, seq_len)
-    else:
-        if args.autoencoder_path and args.transformer_path:
-            autoencoder = MeshAutoencoder(
-                num_quantizers=run.config.num_quantizers,
-                num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
-            ).to(device)
-            autoencoder.init_and_load(run.config.autoencoder_path)
-            dataset.generate_codes(autoencoder)
-            transformer = MeshTransformer(
-                autoencoder,
-                dim=run.config.dim,
-                max_seq_len=seq_len,
-                condition_on_text=True,
-            ).to(device)
-            transformer.load(run.config.transformer_path)
-        else:
-            print(
-                "Both autoencoder and transformer paths must be provided for inference."
-            )
-            return
-
-    texts = args.texts.split(",")
-    process_mesh_data(run, device, transformer, texts)
-
-
 def train_autoencoder(run, dataset, autoencoder):
     trainer = MeshAutoencoderTrainer(
         autoencoder,
@@ -564,17 +454,23 @@ class TestMeshDataset(unittest.TestCase):
         folder_path = "dataset/blockmesh_test"
         files = os.listdir(folder_path)
         supported_formats = (".glb", ".gltf")
-        files = [file for file in os.listdir(folder_path) if os.path.splitext(file)[1] in supported_formats]
+        files = [
+            file
+            for file in os.listdir(folder_path)
+            if os.path.splitext(file)[1] in supported_formats
+        ]
         files = sorted(files)
         max_faces_allowed = 1365
-        idx_to_file_idx = load_and_process_files(folder_path, supported_formats, max_faces_allowed)
+        idx_to_file_idx = load_and_process_files(
+            folder_path, supported_formats, max_faces_allowed
+        )
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         # data = [
         #     generate_mesh_data(idx, idx_to_file_idx, files, folder_path, max_faces_allowed)
         #     for idx in range(len(idx_to_file_idx))
         # ]
         # dataset = MeshDataset(data)
-        dataset = MeshDataset.load('mesh_dataset.npz')
+        dataset = MeshDataset.load("mesh_dataset.npz")
         dataset.generate_face_edges()
         self.dataset = dataset
 
@@ -583,7 +479,7 @@ class TestMeshDataset(unittest.TestCase):
             item = self.dataset.__getitem__(i)
             tensor1 = item["vertices"]
             tensor2 = item["faces"]
-            tensor3 = item["face_edges"] 
+            tensor3 = item["face_edges"]
             str_item = item["texts"]
             if all(
                 isinstance(tensor, (torch.Tensor, np.ndarray))
@@ -592,16 +488,20 @@ class TestMeshDataset(unittest.TestCase):
                 vertices = tensor1.tolist()
                 faces = tensor2.tolist()
                 face_edges = tensor3.tolist()
-                with open(f"dataset/unit_augment/mesh_{str(i).zfill(2)}.json", "wb") as f:
+                with open(
+                    f"dataset/unit_augment/mesh_{str(i).zfill(2)}.json", "wb"
+                ) as f:
                     f.write(json.dumps((vertices, faces, str_item)).encode())
                 convert_to_glb(
-                    (vertices, faces), f"dataset/unit_augment/mesh_{str(i).zfill(2)}.glb"
+                    (vertices, faces),
+                    f"dataset/unit_augment/mesh_{str(i).zfill(2)}.glb",
                 )
             else:
                 print(f"Item {i} in the dataset does not contain valid tensors.")
 
 
 if __name__ == "__main__":
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     parser = argparse.ArgumentParser(description="MeshGPT PyTorch Training Script")
     parser.add_argument(
         "--dataset_directory",
@@ -705,4 +605,111 @@ if __name__ == "__main__":
         args.autoencoder_train = 1
         args.transformer_train = 1
 
-    main(args)
+    dataset_directory = args.dataset_directory
+    data_augment = args.data_augment
+    autoencoder = None
+
+    run = wandb.init(
+        project="meshgpt-pytorch",
+        config={
+            "transformer_path": args.transformer_path,
+            "autoencoder_path": args.autoencoder_path,
+            "dim": 512,
+            "inference_only": args.inference_only,
+            "autoencoder_learning_rate": args.autoencoder_learning_rate,
+            "transformer_learning_rate": args.transformer_learning_rate,
+            "architecture": "MeshGPT",
+            "dataset_directory": dataset_directory,
+            "autoencoder_train": args.autoencoder_train,
+            "transformer_train": args.transformer_train,
+            "batch_size": args.batch_size,
+            "grad_accum_every": args.grad_accum_every,
+            "checkpoint_every": args.checkpoint_every,
+            "device": str(device),
+            "num_quantizers": args.num_quantizers,
+            "autoencoder": {
+                "num_discrete_coors": args.num_discrete_coors,
+            },
+        },
+    )
+
+    folder_path = args.dataset_directory
+    files = os.listdir(folder_path)
+    supported_formats = (".glb", ".gltf")
+    files = [
+        file
+        for file in os.listdir(folder_path)
+        if os.path.splitext(file)[1] in supported_formats
+    ]
+    files = sorted(files)
+    max_faces_allowed = 1365
+    idx_to_file_idx = load_and_process_files(
+        folder_path, supported_formats, max_faces_allowed
+    )
+
+    if args.load_dataset:
+        dataset = MeshDataset.load("mesh_dataset.npz")
+    else:
+        data = [
+            generate_mesh_data(
+                idx, idx_to_file_idx, files, folder_path, max_faces_allowed
+            )
+            for idx in range(len(idx_to_file_idx))
+        ]
+        dataset = MeshDataset(data)
+        dataset.save("mesh_dataset.npz")
+    dataset.generate_face_edges()
+
+    seq_len = max_faces_allowed * 3 * run.config.num_quantizers
+    if seq_len < 8196:
+        seq_len = 8196
+    if not args.inference_only:
+        if args.autoencoder_path:
+            autoencoder = MeshAutoencoder(
+                num_quantizers=run.config.num_quantizers,
+                num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
+            ).to(device)
+            autoencoder.init_and_load(run.config.autoencoder_path, strict=False)
+            if args.continue_train:
+                train_autoencoder(run, dataset, autoencoder)
+        else:
+            autoencoder = MeshAutoencoder(
+                num_quantizers=run.config.num_quantizers,
+                num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
+            ).to(device)
+            train_autoencoder(run, dataset, autoencoder)
+        dataset.generate_codes(autoencoder)
+        transformer = None
+        if args.transformer_path:
+            print(f"Sequence length: {seq_len}")
+            transformer = MeshTransformer(
+                autoencoder,
+                dim=run.config.dim,
+                max_seq_len=seq_len,
+                condition_on_text=True,
+            ).to(device)
+            transformer.load(run.config.transformer_path)
+        else:
+            transformer = train_transformer(autoencoder, run, dataset, device, seq_len)
+    else:
+        if args.autoencoder_path and args.transformer_path:
+            autoencoder = MeshAutoencoder(
+                num_quantizers=run.config.num_quantizers,
+                num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
+            ).to(device)
+            autoencoder.init_and_load(run.config.autoencoder_path)
+            dataset.generate_codes(autoencoder)
+            transformer = MeshTransformer(
+                autoencoder,
+                dim=run.config.dim,
+                max_seq_len=seq_len,
+                condition_on_text=True,
+            ).to(device)
+            transformer.load(run.config.transformer_path)
+        else:
+            print(
+                "Both autoencoder and transformer paths must be provided for inference."
+            )
+
+    texts = args.texts.split(",")
+    process_mesh_data(run, device, transformer, texts)
