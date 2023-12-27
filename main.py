@@ -6,7 +6,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MeshGPT PyTorch Training Script")
     parser.add_argument(
         "--dataset_directory",
-        default="dataset/unit_test",
+        default="dataset/blockmesh_test",
         help="Path to the directory containing the dataset. Default is dataset/blockmesh_test.",
     )
     parser.add_argument(
