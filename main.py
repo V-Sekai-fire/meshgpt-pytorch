@@ -95,6 +95,11 @@ if __name__ == "__main__":
         action="store_true",
         help="If set, continue training from the last checkpoint.",
     )
+    parser.add_argument(
+        "--load_dataset",
+        action="store_true",
+        help="If set, load the dataset from 'mesh_dataset.npz' instead of generating it.",
+    )
     args = parser.parse_args()
 
     if args.test_mode:

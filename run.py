@@ -416,9 +416,15 @@ def main(args):
         },
     )
 
-    dataset = MeshDataset(data)
-    dataset.save('mesh_dataset.npz')
-    #dataset = MeshDataset.load('mesh_dataset.npz')
+    if args.load_dataset:
+        dataset = MeshDataset.load('mesh_dataset.npz')
+    else:
+        data = [
+            generate_mesh_data(idx, idx_to_file_idx, files, folder_path)
+            for idx in range(len(idx_to_file_idx))
+        ]
+        dataset = MeshDataset(data)
+        dataset.save('mesh_dataset.npz')
     dataset.generate_face_edges()
 
     seq_len = get_max_face_count(files, folder_path) * 3 * run.config.num_quantizers
