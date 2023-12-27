@@ -54,7 +54,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--autoencoder_train",
         type=int,
-        default=600,
+        default=1200,
         help="Number of training steps for the autoencoder. Default is 1200.",
     )
     parser.add_argument(
