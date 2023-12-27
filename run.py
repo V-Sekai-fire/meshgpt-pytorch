@@ -649,6 +649,7 @@ if __name__ == "__main__":
 
     if args.load_dataset:
         dataset = MeshDataset.load("mesh_dataset.npz")
+        dataset.to(device)
     else:
         data = [
             generate_mesh_data(
@@ -656,7 +657,7 @@ if __name__ == "__main__":
             )
             for idx in range(len(idx_to_file_idx))
         ]
-        dataset = MeshDataset(data)
+        dataset = MeshDataset(data).to(device)
         dataset.save("mesh_dataset.npz")
     dataset.generate_face_edges()
 
