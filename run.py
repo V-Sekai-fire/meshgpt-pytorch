@@ -566,7 +566,7 @@ def process_mesh_data(run, device, transformer, texts):
 class TestMeshDataset(unittest.TestCase):
     def setUp(self):
         self.augments = 2
-        folder_path = "dataset/unit_test"
+        folder_path = "dataset/blockmesh_test"
         files = os.listdir(folder_path)
         supported_formats = (".glb", ".gltf")
         files = [file for file in os.listdir(folder_path) if os.path.splitext(file)[1] in supported_formats]
