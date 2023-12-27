@@ -24,7 +24,7 @@ class MeshDataset(Dataset):
         self.supported_formats = (".glb", ".gltf")
         self.augments_per_item = augments_per_item
         self.seed = 42
-        self.max_faces = 6206
+        self.max_faces = 100
 
         for file_name in self.filter_files():
             file_path = os.path.join(self.folder_path, file_name)
@@ -39,18 +39,6 @@ class MeshDataset(Dataset):
                 num_faces = len(geometry.faces)
                 total_faces_in_file += num_faces
 
-            self.log_mesh_details(file_name, total_faces_in_file)
-        
-        wandb.log({"dataset_size": self.__len__()})
-
-    def log_mesh_details(self, file_name, total_faces_in_file):
-        wandb.log(
-            {
-                "file_name": file_name,
-                "total_faces_in_file": total_faces_in_file,
-                "max_faces_allowed": self.get_max_face_count(),
-            }
-        )
 
     def get_max_face_count(self):
         max_faces = 0
@@ -381,5 +369,4 @@ class TestMeshDataset(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    wandb.init(project="meshgpt-pytorch", config={})
     unittest.main()
