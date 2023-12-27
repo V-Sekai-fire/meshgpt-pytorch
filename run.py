@@ -658,7 +658,6 @@ if __name__ == "__main__":
         ]
         dataset = MeshDataset(data)
         dataset.save("mesh_dataset.npz")
-    dataset.generate_face_edges()
 
     seq_len = max_faces_allowed * 3 * run.config.num_quantizers
     if seq_len < 8196:
