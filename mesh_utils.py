@@ -378,8 +378,8 @@ def train_transformer(autoencoder, run, dataset, device, seq_len):
     return transformer
 
 
-def process_mesh_data(run, device, transformer, texts):
-    codes = transformer.generate(return_codes=True, texts=texts)
+def process_mesh_data(run, device, transformer, text):
+    codes = transformer.generate(return_codes=True, texts=[text])
 
     transformer.autoencoder.eval()
 

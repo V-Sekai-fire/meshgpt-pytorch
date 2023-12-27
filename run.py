@@ -98,9 +98,9 @@ if __name__ == "__main__":
         help="If set, the script will run in test mode with reduced training steps and a fixed dataset directory.",
     )
     parser.add_argument(
-        "--texts",
+        "--text",
         type=str,
-        help="Comma-separated list of texts to generate meshes for.",
+        help="Text to generate meshes for.",
     )
     parser.add_argument(
         "--continue_train",
@@ -223,6 +223,4 @@ if __name__ == "__main__":
             print(
                 "Both autoencoder and transformer paths must be provided for inference."
             )
-
-    texts = args.texts.split(",")
-    process_mesh_data(run, device, transformer, texts)
+    process_mesh_data(run, device, transformer, args.text)
