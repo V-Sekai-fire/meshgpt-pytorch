@@ -16,20 +16,25 @@ import os
 import random
 from scipy.spatial.transform import Rotation as R
 from scipy.spatial import KDTree
+from sklearn.cluster import KMeans
 
 import math
 
+
 class MeshDataset(Dataset):
-    def __init__(self, folder_path, augments_per_item):
+    def __init__(self, folder_path):
+        self.files = []
         self.folder_path = folder_path
         self.file_list = os.listdir(folder_path)
         self.supported_formats = (".glb", ".gltf")
-        self.augments_per_item = augments_per_item
         self.seed = 42
         self.total_augments = 0
         self.max_faces = 1365
+        self.idx_to_file_idx = []
 
-        for file_name in self.filter_files():
+        chunk_counter = 0  # Keep track of total number of chunks
+        self.files = self.filter_files()
+        for file_name in self.files:
             file_path = os.path.join(self.folder_path, file_name)
             scene = trimesh.load(file_path, force="scene")
             total_faces_in_file = 0
@@ -47,6 +52,11 @@ class MeshDataset(Dataset):
             self.total_augments += num_chunks
             self.log_mesh_details(file_name, total_faces_in_file)
 
+            file_idx = self.filter_files().index(file_name)
+            # Add entries to the lookup table
+            for i in range(num_chunks):
+                self.idx_to_file_idx.append(file_idx)
+            chunk_counter += 1
 
     def __len__(self):
         return self.total_augments
@@ -56,7 +66,6 @@ class MeshDataset(Dataset):
             file for file in self.file_list if file.endswith(self.supported_formats)
         ]
         return filtered_list
-
 
     def log_mesh_details(self, file_name, total_faces_in_file):
         wandb.log(
@@ -137,8 +146,8 @@ class MeshDataset(Dataset):
 
     @staticmethod
     def snake_to_sentence_case(snake_str):
-        components = snake_str.split('_')
-        return ' '.join(word.capitalize() for word in components)
+        components = snake_str.split("_")
+        return " ".join(word.capitalize() for word in components)
 
     @staticmethod
     def compare_vertices(vertex_a, vertex_b):
@@ -166,14 +175,50 @@ class MeshDataset(Dataset):
 
         return 0
 
-    def load_and_process_scene(self, idx):
-        files = self.filter_files()
-        file_idx = idx // self.augments_per_item
-        augment_idx = idx % self.augments_per_item
-        file_path = os.path.join(self.folder_path, files[file_idx])
+    def __getitem__(self, idx):
+        file_idx = self.idx_to_file_idx[idx]
 
+        all_faces, all_vertices, num_chunks = self.load_and_process_scene(file_idx)
+
+        file_name = self.files[file_idx]
+        file_name_without_ext = os.path.splitext(file_name)[0]
+        text = MeshDataset.snake_to_sentence_case(file_name_without_ext)
+
+        all_vertices_np = np.array(all_vertices)
+        centroids = self.generate_face_centroids(all_faces, all_vertices, num_chunks)
+
+        centroid_idx = idx % len(centroids)
+        centroid = centroids[centroid_idx]
+
+        vertices_np = np.array(all_vertices)
+        faces_np = np.array(all_faces)
+
+        kdtree = KDTree(vertices_np)
+
+        selected_faces = self.extract_mesh_with_max_number_of_faces(
+            kdtree, centroid, vertices_np, all_faces
+        )
+
+        new_vertices, new_faces = self.create_new_vertices_and_faces(
+            selected_faces, all_vertices
+        )
+
+        faces = torch.from_numpy(np.array(new_faces))
+
+        vertices, faces = self.center_mesh(
+            (
+                torch.tensor(new_vertices, dtype=torch.float),
+                faces,
+            ),
+        )
+
+        face_edges = derive_face_edges_from_faces(faces)
+
+        return vertices, faces, face_edges, text
+
+    def load_and_process_scene(self, file_idx):
+        file_path = os.path.join(self.folder_path, self.files[file_idx])
         _, file_extension = os.path.splitext(file_path)
-
         scene = trimesh.load(file_path, force="scene")
 
         all_triangles = []
@@ -215,7 +260,10 @@ class MeshDataset(Dataset):
             )
         )
 
-        return all_faces, all_vertices, augment_idx
+        total_faces_in_file = len(all_faces)
+        num_chunks = math.ceil(total_faces_in_file / self.max_faces)
+
+        return all_faces, all_vertices, num_chunks
 
     def create_new_vertices_and_faces(self, all_faces, all_vertices):
         new_vertices = []
@@ -267,120 +315,80 @@ class MeshDataset(Dataset):
 
         return new_vertices, new_faces
 
-
-    def generate_centroids(mesh, num_centroids):
+    def generate_face_centroids(self, all_faces, all_vertices, num_chunk):
         """
-        Generate a deterministic list of centroids that cover the mesh.
+        Generate a list of centroids for each face in the mesh and find the furthest away points.
 
         Parameters:
-        mesh (np.array): The mesh to cover.
-        num_centroids (int): The number of centroids to generate.
+        all_faces (list): The faces of the mesh.
+        all_vertices (list): The vertices of the mesh.
+        num_chunk (int): The number of centroids to generate.
 
         Returns:
-        list: A list of centroid coordinates.
+        ndarray: An array of centroids that are furthest apart.
         """
 
-        # Get the bounds of the mesh
-        min_x, max_x = np.min(mesh[:, 0]), np.max(mesh[:, 0])
-        min_y, max_y = np.min(mesh[:, 1]), np.max(mesh[:, 1])
-        min_z, max_z = np.min(mesh[:, 2]), np.max(mesh[:, 2])
-
-        # Create a grid of points within the bounds
-        x_values = np.linspace(min_x, max_x, num_centroids)
-        y_values = np.linspace(min_y, max_y, num_centroids)
-        z_values = np.linspace(min_z, max_z, num_centroids)
-
-        # Generate the centroids by taking all combinations of x, y, and z values
+        # Generate the centroids by averaging the vertices of each face
         centroids = []
-        for x in x_values:
-            for y in y_values:
-                for z in z_values:
-                    centroids.append([x, y, z])
+        for face in all_faces:
+            face_vertices = [all_vertices[vertex_idx] for vertex_idx in face]
+            centroid = np.mean(face_vertices, axis=0)
+            centroids.append(centroid)
 
-        return centroids
+        # Use K-means clustering to find the furthest away points
+        kmeans = KMeans(n_clusters=num_chunk)
+        kmeans.fit(centroids)
+        furthest_points = kmeans.cluster_centers_
 
+        return furthest_points
 
-    def __getitem__(self, idx):
-        files = self.filter_files()
-        file_idx = idx // self.augments_per_item
-        file_name = files[file_idx]
-        file_name_without_ext = os.path.splitext(file_name)[0]
-        text = MeshDataset.snake_to_sentence_case(file_name_without_ext)
-        
-        all_faces, all_vertices, augment_idx = self.load_and_process_scene(idx)
-            
-        all_vertices_np = np.array(all_vertices)
-        centroids = self.generate_centroids(all_vertices_np, self.num_centroids)
-        
-        vertices_np = np.array(all_vertices)
-        faces_np = np.array(all_faces)
-        
-        kdtree = KDTree(vertices_np)
-        
-        selected_faces = self.extract_mesh_with_max_number_of_faces(kdtree, centroid, vertices_np, all_faces)
-        
-        new_vertices, new_faces = self.create_new_vertices_and_faces(
-            selected_faces, all_vertices
-        )
-        
-        faces = torch.from_numpy(np.array(new_faces))
-        
-        vertices, faces = self.center_mesh(
-            (
-                torch.tensor(new_vertices, dtype=torch.float),
-                faces,
-            ),
-        )
-        
-        face_edges = derive_face_edges_from_faces(faces)
-        
-        return vertices, faces, face_edges, text
-
-
-    def extract_mesh_with_max_number_of_faces(self, kdtree, random_point, vertices_np, all_faces):
+    def extract_mesh_with_max_number_of_faces(
+        self, kdtree, random_point, vertices_np, all_faces
+    ):
         num_neighbours = min(self.max_faces, len(vertices_np))
 
         distances, indices = kdtree.query(random_point, k=num_neighbours)
 
         selected_vertex_indices = set(indices.flatten())
-        selected_faces = [face for face in all_faces if any(vertex in selected_vertex_indices for vertex in face)]
+        selected_faces = [
+            face
+            for face in all_faces
+            if any(vertex in selected_vertex_indices for vertex in face)
+        ]
 
         return np.array(selected_faces)
 
-
-
     def center_mesh(self, base_mesh):
         vertices = base_mesh[0]
-    
+
         # Calculate the centroid of the object
         centroid = [
             sum(vertex[i] for vertex in vertices) / len(vertices) for i in range(3)
         ]
-    
+
         # Translate the vertices so that the centroid is at the origin
         translated_vertices = [[v[i] - centroid[i] for i in range(3)] for v in vertices]
-    
+
         # Normalize uniformly to fill [-1, 1]
         min_vals = np.min(translated_vertices, axis=0)
         max_vals = np.max(translated_vertices, axis=0)
-    
+
         # Calculate the maximum absolute value among all vertices
         max_abs_val = max(np.max(np.abs(min_vals)), np.max(np.abs(max_vals)))
-    
+
         # Calculate the scale factor as the reciprocal of the maximum absolute value
         scale_factor = 1 / max_abs_val if max_abs_val != 0 else 1
-    
+
         # Apply the normalization
         final_vertices = [
-            [component * scale_factor for component in v]
-            for v in translated_vertices
+            [component * scale_factor for component in v] for v in translated_vertices
         ]
-    
+
         return (
             torch.from_numpy(np.array(final_vertices, dtype=np.float32)),
             torch.from_numpy(np.array(base_mesh[1], dtype=np.int64)),
         )
-    
+
 
 import unittest
 import json
@@ -388,8 +396,8 @@ import json
 
 class TestMeshDataset(unittest.TestCase):
     def setUp(self):
-        self.augments = 3
-        self.dataset = MeshDataset("blockmesh_test", self.augments)
+        self.augments = 10
+        self.dataset = MeshDataset("blockmesh_test")
 
     def test_mesh_augmentation(self):
         for i in range(self.augments):
@@ -397,7 +405,10 @@ class TestMeshDataset(unittest.TestCase):
             # Check if the item is a tuple of (tensor, tensor, tensor, string)
             if isinstance(item, tuple) and len(item) == 4:
                 tensor1, tensor2, tensor3, str_item = item
-                if all(isinstance(tensor, (torch.Tensor, np.ndarray)) for tensor in [tensor1, tensor2, tensor3]):
+                if all(
+                    isinstance(tensor, (torch.Tensor, np.ndarray))
+                    for tensor in [tensor1, tensor2, tensor3]
+                ):
                     vertices = tensor1.tolist()
                     faces = tensor2.tolist()
                     face_edges = tensor3.tolist()
