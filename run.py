@@ -16,7 +16,13 @@ from sklearn.cluster import KMeans
 import unittest
 from scipy.spatial import KDTree
 from meshgpt_pytorch.data import MeshDataset
-from mesh_utils import generate_mesh_data, process_mesh_data, load_and_process_files, train_autoencoder, train_transformer
+from mesh_utils import (
+    generate_mesh_data,
+    process_mesh_data,
+    load_and_process_files,
+    train_autoencoder,
+    train_transformer,
+)
 
 
 if __name__ == "__main__":
