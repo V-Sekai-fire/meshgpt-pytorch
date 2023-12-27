@@ -15,7 +15,6 @@ from abc import abstractmethod
 import os
 import random
 from scipy.spatial.transform import Rotation as R
-import igl
 from scipy.spatial import KDTree
 
 class MeshDataset(Dataset):
