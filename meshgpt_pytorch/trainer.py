@@ -246,7 +246,7 @@ class MeshAutoencoderTrainer(Module):
         elif isinstance(data, dict):
             forward_kwargs = data
 
-        maybe_del(forward_kwargs, 'texts', 'text_embeds')
+        maybe_del(forward_kwargs, 'text', 'text_embeds')
         return forward_kwargs
 
     def forward(self):
@@ -264,7 +264,7 @@ class MeshAutoencoderTrainer(Module):
 
                 forward_kwargs = self.next_data_to_forward_kwargs(dl_iter)
 
-                maybe_del(forward_kwargs, 'texts', 'text_embeds')
+                maybe_del(forward_kwargs, 'text', 'text_embeds')
         
                 with self.accelerator.autocast(), maybe_no_sync():
 
@@ -346,7 +346,7 @@ class MeshAutoencoderTrainer(Module):
                 elif isinstance(data, dict): 
                     forward_kwargs = data 
             
-                maybe_del(forward_kwargs, 'texts', 'text_embeds')
+                maybe_del(forward_kwargs, 'text', 'text_embeds')
 
                 with self.accelerator.autocast():
                     loss = self.model(**forward_kwargs)
