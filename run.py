@@ -18,7 +18,7 @@ def main(args):
     autoencoder = None
 
     run = wandb.init(
-        project="fire-meshgpt-pytorch",
+        project="meshgpt-pytorch",
         config={
             "transformer_path": args.transformer_path,
             "autoencoder_path": args.autoencoder_path,

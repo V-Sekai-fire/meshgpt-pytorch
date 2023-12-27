@@ -45,6 +45,8 @@ class MeshDataset(Dataset):
             # Calculate the number of chunks for this file
             num_chunks = math.ceil(total_faces_in_file / self.max_faces)
             self.total_augments += num_chunks
+            self.log_mesh_details(file_name, total_faces_in_file)
+
 
     def __len__(self):
         return self.total_augments
@@ -55,6 +57,18 @@ class MeshDataset(Dataset):
         ]
         return filtered_list
 
+
+    def log_mesh_details(self, file_name, total_faces_in_file):
+        wandb.log(
+            {
+                "file_name": file_name,
+                "total_faces_in_file": total_faces_in_file,
+                "max_faces_allowed": self.get_max_face_count(),
+            }
+        )
+
+    def __len__(self):
+        return self.total_augments
 
     def get_max_face_count(self):
         max_faces = 0
@@ -376,4 +390,5 @@ class TestMeshDataset(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    wandb.init(project="meshgpt-pytorch", config={})
     unittest.main()
