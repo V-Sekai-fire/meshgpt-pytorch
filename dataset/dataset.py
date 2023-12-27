@@ -17,6 +17,8 @@ import random
 from scipy.spatial.transform import Rotation as R
 from scipy.spatial import KDTree
 
+import math
+
 class MeshDataset(Dataset):
     def __init__(self, folder_path, augments_per_item):
         self.folder_path = folder_path
@@ -25,6 +27,7 @@ class MeshDataset(Dataset):
         self.augments_per_item = augments_per_item
         self.seed = 42
         self.max_faces = 100
+        self.total_augments = 0
 
         for file_name in self.filter_files():
             file_path = os.path.join(self.folder_path, file_name)
@@ -38,6 +41,19 @@ class MeshDataset(Dataset):
 
                 num_faces = len(geometry.faces)
                 total_faces_in_file += num_faces
+
+            # Calculate the number of chunks for this file
+            num_chunks = math.ceil(total_faces_in_file / self.max_faces)
+            self.total_augments += num_chunks
+
+    def __len__(self):
+        return self.total_augments
+
+    def filter_files(self):
+        filtered_list = [
+            file for file in self.file_list if file.endswith(self.supported_formats)
+        ]
+        return filtered_list
 
 
     def get_max_face_count(self):
@@ -61,12 +77,6 @@ class MeshDataset(Dataset):
                 max_faces = total_faces_in_file
 
         return max_faces
-
-    def filter_files(self):
-        filtered_list = [
-            file for file in self.file_list if file.endswith(self.supported_formats)
-        ]
-        return filtered_list
 
     @staticmethod
     def convert_to_glb(json_data, output_file_path):
@@ -110,9 +120,6 @@ class MeshDataset(Dataset):
             return False
 
         return True
-
-    def __len__(self):
-        return len(self.filter_files()) * self.augments_per_item
 
     @staticmethod
     def snake_to_sentence_case(snake_str):
