@@ -175,6 +175,7 @@ class MeshDataset(Dataset):
 
         return 0
 
+    @lru_cache(maxsize=None)
     def __getitem__(self, idx):
         file_idx = self.idx_to_file_idx[idx]
 
@@ -216,6 +217,7 @@ class MeshDataset(Dataset):
 
         return vertices, faces, face_edges, text
 
+    @lru_cache(maxsize=None)
     def load_and_process_scene(self, file_idx):
         file_path = os.path.join(self.folder_path, self.files[file_idx])
         _, file_extension = os.path.splitext(file_path)
@@ -265,6 +267,7 @@ class MeshDataset(Dataset):
 
         return all_faces, all_vertices, num_chunks
 
+    @lru_cache(maxsize=None)
     def create_new_vertices_and_faces(self, all_faces, all_vertices):
         new_vertices = []
         new_faces = []
@@ -315,6 +318,7 @@ class MeshDataset(Dataset):
 
         return new_vertices, new_faces
 
+    @lru_cache(maxsize=None)
     def generate_face_centroids(self, all_faces, all_vertices, num_chunk):
         """
         Generate a list of centroids for each face in the mesh and find the furthest away points.
@@ -342,6 +346,7 @@ class MeshDataset(Dataset):
 
         return furthest_points
 
+    @lru_cache(maxsize=None)
     def extract_mesh_with_max_number_of_faces(
         self, kdtree, random_point, vertices_np, all_faces
     ):
@@ -358,6 +363,7 @@ class MeshDataset(Dataset):
 
         return np.array(selected_faces)
 
+    @lru_cache(maxsize=None)
     def center_mesh(self, base_mesh):
         vertices = base_mesh[0]
 
