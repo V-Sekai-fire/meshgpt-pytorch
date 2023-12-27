@@ -41,7 +41,7 @@ def main(args):
             },
         },
     )
-    dataset = MeshDataset(dataset_directory, data_augment)
+    dataset = MeshDataset(dataset_directory)
     seq_len = dataset.get_max_face_count() * 3 * run.config.num_quantizers
     if seq_len < 8196:
         seq_len = 8196
