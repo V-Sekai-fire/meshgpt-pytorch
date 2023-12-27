@@ -602,8 +602,6 @@ class TestMeshDataset(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    wandb.init(project="meshgpt-pytorch", config={})
-    
     parser = argparse.ArgumentParser(description="MeshGPT PyTorch Training Script")
     parser.add_argument(
         "--dataset_directory",
