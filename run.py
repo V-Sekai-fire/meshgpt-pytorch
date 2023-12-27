@@ -112,6 +112,12 @@ if __name__ == "__main__":
         action="store_true",
         help="If set, load the dataset from 'mesh_dataset.npz' instead of generating it.",
     )
+    parser.add_argument(
+        "--max_faces_allowed",
+        type=int,
+        default=100,
+        help="Maximum number of faces for the transformer. Default is 100.",
+    )
     args = parser.parse_args()
 
     if args.test_mode:
@@ -125,6 +131,7 @@ if __name__ == "__main__":
     run = wandb.init(
         project="meshgpt-pytorch",
         config={
+            "max_faces_allowed": args.max_faces_allowed,
             "transformer_path": args.transformer_path,
             "autoencoder_path": args.autoencoder_path,
             "dim": 512,
@@ -154,7 +161,6 @@ if __name__ == "__main__":
         if os.path.splitext(file)[1] in supported_formats
     ]
     files = sorted(files)
-    max_faces_allowed = 1365
     idx_to_file_idx = load_and_process_files(
         folder_path, supported_formats, max_faces_allowed
     )
