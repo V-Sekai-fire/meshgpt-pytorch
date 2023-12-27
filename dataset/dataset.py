@@ -125,37 +125,3 @@ class MeshDataset(Dataset):
 
 import unittest
 import json
-
-
-class TestMeshDataset(unittest.TestCase):
-    def setUp(self):
-        self.augments = 20
-        self.dataset = MeshDataset("blockmesh_test")
-
-    def test_mesh_augmentation(self):
-        for i in range(self.augments):
-            item = self.dataset.__getitem__(i)
-            # Check if the item is a tuple of (tensor, tensor, tensor, string)
-            if isinstance(item, tuple) and len(item) == 4:
-                tensor1, tensor2, tensor3, str_item = item
-                if all(
-                    isinstance(tensor, (torch.Tensor, np.ndarray))
-                    for tensor in [tensor1, tensor2, tensor3]
-                ):
-                    vertices = tensor1.tolist()
-                    faces = tensor2.tolist()
-                    face_edges = tensor3.tolist()
-                    with open(f"unit_augment/mesh_{str(i).zfill(2)}.json", "wb") as f:
-                        f.write(json.dumps((vertices, faces, str_item)).encode())
-                    self.dataset.convert_to_glb(
-                        (vertices, faces), f"unit_augment/mesh_{str(i).zfill(2)}.glb"
-                    )
-                else:
-                    print(f"Item {i} in the dataset does not contain valid tensors.")
-            else:
-                print(f"Item {i} in the dataset is not a valid tuple.")
-
-
-if __name__ == "__main__":
-    wandb.init(project="meshgpt-pytorch", config={})
-    unittest.main()

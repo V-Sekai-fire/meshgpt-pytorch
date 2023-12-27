@@ -14,6 +14,7 @@ from meshgpt_pytorch import MeshTransformer
 import trimesh
 import math
 from sklearn.cluster import KMeans
+import unittest
 from scipy.spatial import KDTree
 
 
@@ -280,7 +281,7 @@ def log_mesh_details(file_name, total_faces_in_file, max_face_count):
     )
 
 
-def get_max_face_count(files, folder_path):
+def get_max_face_count(files, folder_path, max_faces_allowed):
     max_faces = 0
     for file in files:
         file_path = os.path.join(folder_path, file)
@@ -295,16 +296,16 @@ def get_max_face_count(files, folder_path):
             num_faces = len(geometry.faces)
             total_faces_in_file += num_faces
 
-        if total_faces_in_file > max_faces:
+        if total_faces_in_file > max_faces_allowed:
             max_faces = total_faces_in_file
 
     return max_faces
 
 
-def load_and_process_files(folder_path, supported_formats):
+def load_and_process_files(folder_path, supported_formats, max_faces_allowed):
     file_list = os.listdir(folder_path)
     files = filter_files(file_list, supported_formats)
-    max_faces = get_max_face_count(files, folder_path)
+    max_faces = get_max_face_count(files, folder_path, max_faces_allowed)
     idx_to_file_idx = []
 
     for file_name in files:
@@ -333,11 +334,11 @@ def process_scene(scene):
     return total_faces_in_file
 
 
-def generate_mesh_data(idx, idx_to_file_idx, files, folder_path):
+def generate_mesh_data(idx, idx_to_file_idx, files, folder_path, max_faces_allowed):
     file_idx = idx_to_file_idx[idx]
     file_name = files[file_idx]
     all_faces, all_vertices, num_chunks = load_and_process_scene(
-        file_idx, files, folder_path
+        file_idx, files, folder_path, max_faces_allowed
     )
 
     file_name_without_ext = os.path.splitext(file_name)[0]
@@ -379,12 +380,8 @@ def main(args):
     supported_formats = (".glb", ".gltf")
     files = [file for file in os.listdir(folder_path) if os.path.splitext(file)[1] in supported_formats]
     files = sorted(files)
-    idx_to_file_idx = load_and_process_files(folder_path, supported_formats)
-
-    data = [
-        generate_mesh_data(idx, idx_to_file_idx, files, folder_path)
-        for idx in range(len(idx_to_file_idx))
-    ]
+    max_faces_allowed = 100
+    idx_to_file_idx = load_and_process_files(folder_path, supported_formats, max_faces_allowed)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -588,3 +585,57 @@ def process_mesh_data(run, device, transformer, texts):
     with open("chatml.jsonl", "w", encoding="utf-8") as f:
         for item in data:
             f.write(json.dumps(item, ensure_ascii=False) + "\n")
+
+
+class TestMeshDataset(unittest.TestCase):
+    def setUp(self):
+        self.augments = 10
+        folder_path = args.dataset_directory
+        files = os.listdir(folder_path)
+        supported_formats = (".glb", ".gltf")
+        files = [file for file in os.listdir(folder_path) if os.path.splitext(file)[1] in supported_formats]
+        files = sorted(files)
+        idx_to_file_idx = load_and_process_files(folder_path, supported_formats)
+        max_faces_allowed = 100
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        dataset_directory = args.dataset_directory
+        if args.load_dataset:
+            dataset = MeshDataset.load('mesh_dataset.npz')
+        else:
+            data = [
+                generate_mesh_data(idx, idx_to_file_idx, files, folder_path)
+                for idx in range(len(idx_to_file_idx))
+            ]
+            dataset = MeshDataset(data)
+            dataset.save('mesh_dataset.npz')
+        dataset.generate_face_edges()
+        self.dataset = dataset
+
+    def test_mesh_augmentation(self):
+        for i in range(self.augments):
+            item = self.dataset.__getitem__(i)
+            # Check if the item is a tuple of (tensor, tensor, tensor, string)
+            if isinstance(item, tuple) and len(item) == 4:
+                tensor1, tensor2, tensor3, str_item = item
+                if all(
+                    isinstance(tensor, (torch.Tensor, np.ndarray))
+                    for tensor in [tensor1, tensor2, tensor3]
+                ):
+                    vertices = tensor1.tolist()
+                    faces = tensor2.tolist()
+                    face_edges = tensor3.tolist()
+                    with open(f"unit_augment/mesh_{str(i).zfill(2)}.json", "wb") as f:
+                        f.write(json.dumps((vertices, faces, str_item)).encode())
+                    self.dataset.convert_to_glb(
+                        (vertices, faces), f"unit_augment/mesh_{str(i).zfill(2)}.glb"
+                    )
+                else:
+                    print(f"Item {i} in the dataset does not contain valid tensors.")
+            else:
+                print(f"Item {i} in the dataset is not a valid tuple.")
+
+
+if __name__ == "__main__":
+    wandb.init(project="meshgpt-pytorch", config={})
+    unittest.main()
