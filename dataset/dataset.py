@@ -16,7 +16,7 @@ import os
 import random
 from scipy.spatial.transform import Rotation as R
 import igl
-
+from scipy.spatial import KDTree
 
 class MeshDataset(Dataset):
     def __init__(self, folder_path, augments_per_item):
@@ -25,6 +25,7 @@ class MeshDataset(Dataset):
         self.supported_formats = (".glb", ".gltf")
         self.augments_per_item = augments_per_item
         self.seed = 42
+        self.max_faces = 500
 
         for file_name in self.filter_files():
             file_path = os.path.join(self.folder_path, file_name)
@@ -40,12 +41,6 @@ class MeshDataset(Dataset):
                 total_faces_in_file += num_faces
 
             self.log_mesh_details(file_name, total_faces_in_file)
-
-            max_faces = 70000
-            if total_faces_in_file > max_faces:
-                raise ValueError(
-                    f"Mesh {file_name} has too many faces : {total_faces_in_file} / {max_faces}"
-                )
         
         wandb.log({"dataset_size": self.__len__()})
 
@@ -263,9 +258,11 @@ class MeshDataset(Dataset):
             new_faces.append(sorted_indices)
 
         return new_vertices, new_faces
+        
 
-    @lru_cache(maxsize=None)
     def __getitem__(self, idx):
+        random.seed(self.seed + self.augments_per_item * idx + idx)
+    
         files = self.filter_files()
         file_idx = idx // self.augments_per_item
         file_name = files[file_idx]
@@ -273,85 +270,86 @@ class MeshDataset(Dataset):
         text = MeshDataset.snake_to_sentence_case(file_name_without_ext)
     
         all_faces, all_vertices, augment_idx = self.load_and_process_scene(idx)
+    
+        vertices_np = np.array(all_vertices)
+        faces_np = np.array(all_faces)
+    
+        kdtree = KDTree(vertices_np)
+    
+        random_point = self.generate_random_point_in_bounding_box(vertices_np)
+    
+        selected_faces = self.extract_mesh_with_max_number_of_faces(kdtree, random_point, vertices_np, all_faces)
+    
         new_vertices, new_faces = self.create_new_vertices_and_faces(
-            all_faces, all_vertices
+            selected_faces, all_vertices
         )
-        vertices, faces = self.augment_mesh(
+    
+        faces = torch.from_numpy(np.array(new_faces))
+    
+        vertices, faces = self.center_mesh(
             (
                 torch.tensor(new_vertices, dtype=torch.float),
-                torch.tensor(new_faces, dtype=torch.long),
+                faces,
             ),
-            self.augments_per_item,
-            augment_idx,
         )
     
-        vertices_np = vertices.numpy()
-        faces_np = faces.numpy()
-    
-        l, f =  (vertices_np, faces_np)
-    
-        vertices = torch.from_numpy(l)
-        faces = torch.from_numpy(f)
-
         face_edges = derive_face_edges_from_faces(faces)
     
         return vertices, faces, face_edges, text
 
 
-    def augment_mesh(self, base_mesh, augment_count, augment_idx):
-        # Set the random seed for reproducibility
-        random.seed(self.seed + augment_count * augment_idx + augment_idx)
+    def extract_mesh_with_max_number_of_faces(self, kdtree, random_point, vertices_np, all_faces):
+        num_neighbours = min(self.max_faces, len(vertices_np))
 
+        distances, indices = kdtree.query(random_point, k=num_neighbours)
+
+        selected_vertex_indices = set(indices.flatten())
+        selected_faces = [face for face in all_faces if any(vertex in selected_vertex_indices for vertex in face)]
+
+        return np.array(selected_faces)
+
+
+    def generate_random_point_in_bounding_box(self, vertices_np):
+        min_coords = vertices_np.min(axis=0)
+        max_coords = vertices_np.max(axis=0)
+
+        random_point = np.random.uniform(min_coords, max_coords)
+
+        return random_point
+
+
+    def center_mesh(self, base_mesh):
         vertices = base_mesh[0]
-
+    
         # Calculate the centroid of the object
         centroid = [
             sum(vertex[i] for vertex in vertices) / len(vertices) for i in range(3)
         ]
-
+    
         # Translate the vertices so that the centroid is at the origin
         translated_vertices = [[v[i] - centroid[i] for i in range(3)] for v in vertices]
-
-        # Generate a random scale factor
-        scale = random.uniform(0.8, 1)
-
-        # Create a rotation matrix for rotation around z-axis
-        theta = (np.pi / 256) * (augment_idx % 256)  # rotate on a grid of 1/256
-        cos, sin = np.cos(theta), np.sin(theta)
-        rotation_matrix = np.array([[cos, -sin, 0], [sin, cos, 0], [0, 0, 1]])
-
-        # Apply the affine transformation (rotation + scaling)
-        transformed_vertices = [
-            np.dot(rotation_matrix, [v[i] * scale for i in range(3)])
-            for v in translated_vertices
-        ]
-
-        # Translate the vertices back so that the centroid is at its original position
-        final_vertices = [
-            [v[i] + centroid[i] for i in range(3)] for v in transformed_vertices
-        ]
-
+    
         # Normalize uniformly to fill [-1, 1]
-        min_vals = np.min(final_vertices, axis=0)
-        max_vals = np.max(final_vertices, axis=0)
-
+        min_vals = np.min(translated_vertices, axis=0)
+        max_vals = np.max(translated_vertices, axis=0)
+    
         # Calculate the maximum absolute value among all vertices
         max_abs_val = max(np.max(np.abs(min_vals)), np.max(np.abs(max_vals)))
-
+    
         # Calculate the scale factor as the reciprocal of the maximum absolute value
         scale_factor = 1 / max_abs_val if max_abs_val != 0 else 1
-
+    
         # Apply the normalization
         final_vertices = [
-            [(component - c) * scale_factor for component, c in zip(v, centroid)]
-            for v in final_vertices
+            [component * scale_factor for component in v]
+            for v in translated_vertices
         ]
-
+    
         return (
             torch.from_numpy(np.array(final_vertices, dtype=np.float32)),
             base_mesh[1],
         )
-
+    
 
 import unittest
 import json
