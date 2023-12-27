@@ -41,7 +41,7 @@ def main(args):
             },
         },
     )
-    dataset = MeshDataset(dataset_directory)
+    dataset = MeshDataset(dataset_directory, data_augment)
     seq_len = dataset.get_max_face_count() * 3 * run.config.num_quantizers
     if seq_len < 8196:
         seq_len = 8196
@@ -211,8 +211,8 @@ if __name__ == "__main__":
                         help="Number of training steps for the autoencoder. Default is 1200.")
     parser.add_argument("--transformer_train", type=int, default=600, 
                         help="Number of training steps for the transformer. Default is 600.")
-    parser.add_argument("--batch_size", type=int, default=4, 
-                        help="Batch size for training. Default is 4.")
+    parser.add_argument("--batch_size", type=int, default=1, 
+                        help="Batch size for training. Default is 1.")
     parser.add_argument("--grad_accum_every", type=int, default=2, 
                         help="Gradient accumulation steps. Default is 2.")
     parser.add_argument("--checkpoint_every", type=int, default=20, 
