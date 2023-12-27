@@ -24,7 +24,7 @@ class MeshDataset(Dataset):
         self.supported_formats = (".glb", ".gltf")
         self.augments_per_item = augments_per_item
         self.seed = 42
-        self.max_faces = 500
+        self.max_faces = 1365
 
         for file_name in self.filter_files():
             file_path = os.path.join(self.folder_path, file_name)
