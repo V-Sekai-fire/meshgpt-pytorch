@@ -266,43 +266,74 @@ class MeshDataset(Dataset):
             new_faces.append(sorted_indices)
 
         return new_vertices, new_faces
-        
+
+
+    def generate_centroids(mesh, num_centroids):
+        """
+        Generate a deterministic list of centroids that cover the mesh.
+
+        Parameters:
+        mesh (np.array): The mesh to cover.
+        num_centroids (int): The number of centroids to generate.
+
+        Returns:
+        list: A list of centroid coordinates.
+        """
+
+        # Get the bounds of the mesh
+        min_x, max_x = np.min(mesh[:, 0]), np.max(mesh[:, 0])
+        min_y, max_y = np.min(mesh[:, 1]), np.max(mesh[:, 1])
+        min_z, max_z = np.min(mesh[:, 2]), np.max(mesh[:, 2])
+
+        # Create a grid of points within the bounds
+        x_values = np.linspace(min_x, max_x, num_centroids)
+        y_values = np.linspace(min_y, max_y, num_centroids)
+        z_values = np.linspace(min_z, max_z, num_centroids)
+
+        # Generate the centroids by taking all combinations of x, y, and z values
+        centroids = []
+        for x in x_values:
+            for y in y_values:
+                for z in z_values:
+                    centroids.append([x, y, z])
+
+        return centroids
+
 
     def __getitem__(self, idx):
-        random.seed(self.seed + self.augments_per_item * idx + idx)
-    
         files = self.filter_files()
         file_idx = idx // self.augments_per_item
         file_name = files[file_idx]
         file_name_without_ext = os.path.splitext(file_name)[0]
         text = MeshDataset.snake_to_sentence_case(file_name_without_ext)
-    
+        
         all_faces, all_vertices, augment_idx = self.load_and_process_scene(idx)
-    
+            
+        all_vertices_np = np.array(all_vertices)
+        centroids = generate_centroids(all_vertices_np, self.num_centroids)
+        
         vertices_np = np.array(all_vertices)
         faces_np = np.array(all_faces)
-    
+        
         kdtree = KDTree(vertices_np)
-    
-        random_point = self.generate_random_point_in_bounding_box(vertices_np)
-    
-        selected_faces = self.extract_mesh_with_max_number_of_faces(kdtree, random_point, vertices_np, all_faces)
-    
+        
+        selected_faces = self.extract_mesh_with_max_number_of_faces(kdtree, centroid, vertices_np, all_faces)
+        
         new_vertices, new_faces = self.create_new_vertices_and_faces(
             selected_faces, all_vertices
         )
-    
+        
         faces = torch.from_numpy(np.array(new_faces))
-    
+        
         vertices, faces = self.center_mesh(
             (
                 torch.tensor(new_vertices, dtype=torch.float),
                 faces,
             ),
         )
-    
+        
         face_edges = derive_face_edges_from_faces(faces)
-    
+        
         return vertices, faces, face_edges, text
 
 
@@ -316,14 +347,6 @@ class MeshDataset(Dataset):
 
         return np.array(selected_faces)
 
-
-    def generate_random_point_in_bounding_box(self, vertices_np):
-        min_coords = vertices_np.min(axis=0)
-        max_coords = vertices_np.max(axis=0)
-
-        random_point = np.random.uniform(min_coords, max_coords)
-
-        return random_point
 
 
     def center_mesh(self, base_mesh):
