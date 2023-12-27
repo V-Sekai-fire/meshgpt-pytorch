@@ -92,8 +92,6 @@ def compare_faces(face_a, face_b, vertices):
 
 
 def load_and_process_scene(file_idx, files, folder_path, max_face_count):
-    max_faces = get_max_face_count(files, folder_path, max_face_count)
-
     file_path = os.path.join(folder_path, files[file_idx])
     _, file_extension = os.path.splitext(file_path)
     scene = trimesh.load(file_path, force="scene")
@@ -138,7 +136,7 @@ def load_and_process_scene(file_idx, files, folder_path, max_face_count):
     )
 
     total_faces_in_file = len(all_faces)
-    num_chunks = math.ceil(total_faces_in_file / max_faces)
+    num_chunks = math.ceil(total_faces_in_file / max_face_count)
 
     return all_faces, all_vertices, num_chunks
 
@@ -281,31 +279,9 @@ def log_mesh_details(file_name, total_faces_in_file, max_face_count):
     )
 
 
-def get_max_face_count(files, folder_path, max_faces_allowed):
-    max_faces = 0
-    for file in files:
-        file_path = os.path.join(folder_path, file)
-        scene = trimesh.load(file_path, force="scene")
-        total_faces_in_file = 0
-        for _, geometry in scene.geometry.items():
-            try:
-                geometry.apply_transform(scene.graph.get(_)[0])
-            except Exception as e:
-                pass
-
-            num_faces = len(geometry.faces)
-            total_faces_in_file += num_faces
-
-        if total_faces_in_file > max_faces_allowed:
-            max_faces = total_faces_in_file
-
-    return max_faces
-
-
 def load_and_process_files(folder_path, supported_formats, max_faces_allowed):
     file_list = os.listdir(folder_path)
     files = filter_files(file_list, supported_formats)
-    max_faces = get_max_face_count(files, folder_path, max_faces_allowed)
     idx_to_file_idx = []
 
     for file_name in files:
@@ -313,7 +289,7 @@ def load_and_process_files(folder_path, supported_formats, max_faces_allowed):
         scene = trimesh.load(file_path, force="scene")
         total_faces_in_file = process_scene(scene)
 
-        num_chunks = math.ceil(total_faces_in_file / max_faces)
+        num_chunks = math.ceil(total_faces_in_file / max_faces_allowed)
         file_idx = files.index(file_name)
         idx_to_file_idx.extend([file_idx] * num_chunks)
 
@@ -353,7 +329,7 @@ def generate_mesh_data(idx, idx_to_file_idx, files, folder_path, max_faces_allow
 
     kdtree = KDTree(vertices_np)
     selected_faces = extract_mesh_with_max_number_of_faces(
-        kdtree, centroid, vertices_np, all_faces, get_max_face_count(files, folder_path, max_faces_allowed)
+        kdtree, centroid, vertices_np, all_faces, max_faces_allowed
     )
 
     new_vertices, new_faces = create_new_vertices_and_faces(
@@ -424,7 +400,7 @@ def main(args):
         dataset.save('mesh_dataset.npz')
     dataset.generate_face_edges()
 
-    seq_len = get_max_face_count(files, folder_path, max_faces_allowed) * 3 * run.config.num_quantizers
+    seq_len = max_faces_allowed * 3 * run.config.num_quantizers
     if seq_len < 8196:
         seq_len = 8196
     if not args.inference_only:
@@ -589,8 +565,8 @@ def process_mesh_data(run, device, transformer, texts):
 
 class TestMeshDataset(unittest.TestCase):
     def setUp(self):
-        self.augments = 10
-        folder_path = args.dataset_directory
+        self.augments = 2
+        folder_path = "dataset/unit_test"
         files = os.listdir(folder_path)
         supported_formats = (".glb", ".gltf")
         files = [file for file in os.listdir(folder_path) if os.path.splitext(file)[1] in supported_formats]
@@ -598,17 +574,12 @@ class TestMeshDataset(unittest.TestCase):
         max_faces_allowed = 100
         idx_to_file_idx = load_and_process_files(folder_path, supported_formats, max_faces_allowed)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        dataset_directory = args.dataset_directory
-        if args.load_dataset:
-            dataset = MeshDataset.load('mesh_dataset.npz')
-        else:
-            data = [
-                generate_mesh_data(idx, idx_to_file_idx, files, folder_path)
-                for idx in range(len(idx_to_file_idx))
-            ]
-            dataset = MeshDataset(data)
-            dataset.save('mesh_dataset.npz')
+        data = [
+            generate_mesh_data(idx, idx_to_file_idx, files, folder_path, max_faces_allowed)
+            for idx in range(len(idx_to_file_idx))
+        ]
+        dataset = MeshDataset(data)
+        dataset.save('mesh_dataset.npz')
         dataset.generate_face_edges()
         self.dataset = dataset
 
