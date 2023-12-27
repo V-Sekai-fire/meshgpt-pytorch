@@ -418,7 +418,7 @@ def main(args):
                 num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
             ).to(device)
             train_autoencoder(run, dataset, autoencoder)
-
+        dataset.generate_codes(autoencoder)
         transformer = None
         if args.transformer_path:
             print(f"Sequence length: {seq_len}")
@@ -438,7 +438,7 @@ def main(args):
                 num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
             ).to(device)
             autoencoder.init_and_load(run.config.autoencoder_path)
-
+            dataset.generate_codes(autoencoder)
             transformer = MeshTransformer(
                 autoencoder,
                 dim=run.config.dim,
