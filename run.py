@@ -212,11 +212,16 @@ def generate_face_centroids(all_faces, all_vertices, num_chunk):
         centroid = np.mean(face_vertices, axis=0)
         centroids.append(centroid)
 
-    kmeans = KMeans(n_clusters=num_chunk, n_init="auto")
-    kmeans.fit(centroids)
-    furthest_points = kmeans.cluster_centers_
+    corner_point = min(centroids, key=lambda x: sum(x))
+    furthest_points = [corner_point]
 
-    return furthest_points
+    for _ in range(num_chunk - 1):
+        distances = np.array([np.linalg.norm(np.array(point) - np.array(furthest_points), axis=1) for point in centroids])
+        min_distances = np.min(distances, axis=0)
+        furthest_point = centroids[np.argmax(min_distances)]
+        furthest_points.append(furthest_point)
+
+    return np.array(furthest_points)
 
 
 def extract_mesh_with_max_number_of_faces(
