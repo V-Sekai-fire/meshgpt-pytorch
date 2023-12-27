@@ -48,6 +48,8 @@ from gateloop_transformer import SimpleGateLoopLayer
 
 from tqdm import tqdm
 
+from meshgpt_pytorch.data import derive_face_edges_from_faces
+
 # helper functions
 
 def exists(v):
