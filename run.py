@@ -188,32 +188,6 @@ def create_new_vertices_and_faces(all_faces, all_vertices):
     return new_vertices, new_faces
 
 
-def generate_face_centroids(all_faces, all_vertices, num_chunk):
-    """
-    Generate a list of centroids for each face in the mesh and find the furthest away points.
-
-    Parameters:
-    all_faces (list): The faces of the mesh.
-    all_vertices (list): The vertices of the mesh.
-    num_chunk (int): The number of centroids to generate.
-
-    Returns:
-    ndarray: An array of centroids that are furthest apart.
-    """
-
-    centroids = []
-    for face in all_faces:
-        face_vertices = [all_vertices[vertex_idx] for vertex_idx in face]
-        centroid = np.mean(face_vertices, axis=0)
-        centroids.append(centroid)
-
-    kmeans = KMeans(n_clusters=num_chunk, n_init="auto")
-    kmeans.fit(centroids)
-    furthest_points = kmeans.cluster_centers_
-
-    return furthest_points
-
-
 def extract_mesh_with_max_number_of_faces(
     kdtree, random_point, vertices_np, all_faces, max_faces
 ):
@@ -311,7 +285,19 @@ def generate_mesh_data(idx, idx_to_file_idx, files, folder_path, max_faces_allow
     file_name_without_ext = os.path.splitext(file_name)[0]
     text = snake_to_sentence_case(file_name_without_ext)
 
-    centroids = generate_face_centroids(all_faces, all_vertices, num_chunks)
+    centroids = []
+    for face in all_faces:
+        face_vertices = [all_vertices[vertex_idx] for vertex_idx in face]
+        centroid = np.mean(face_vertices, axis=0)
+        centroids.append(centroid)
+
+    # Ensure the number of clusters is less than both num_chunks and max_faces_allowed
+    num_clusters = min(num_chunks, max_faces_allowed - 1)
+    
+    kmeans = KMeans(n_clusters=num_clusters, n_init="auto")
+    kmeans.fit(centroids)
+    centroids = kmeans.cluster_centers_
+
     centroid_idx = idx % len(centroids)
     centroid = centroids[centroid_idx]
 
@@ -337,7 +323,7 @@ def generate_mesh_data(idx, idx_to_file_idx, files, folder_path, max_faces_allow
     return {
         "vertices": vertices,
         "faces": faces,
-        "texts": text,
+        "text": text,
     }
 
 
