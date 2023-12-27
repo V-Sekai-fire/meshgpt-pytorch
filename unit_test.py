@@ -11,7 +11,8 @@ from meshgpt_pytorch import MeshTransformer
 import trimesh
 import math
 import unittest
-from run import load_and_process_files, generate_mesh_data, convert_to_glb
+from run import load_and_process_files, generate_mesh_data
+from mesh_utils import convert_to_glb
 from meshgpt_pytorch.data import MeshDataset
 
 
