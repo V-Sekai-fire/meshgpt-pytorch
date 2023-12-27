@@ -49,10 +49,16 @@ def process_glb_file(glb_path, output_glb_path, setup_type):
 
     commands = [
         os.path.normpath(
+            f"./thirdparty/bin/int_tri {source_file} --noGUI --refineDelaunay"
+        ),
+        os.path.normpath(
             f"./thirdparty/quadwild_windows/quadwild {source_file} 2 thirdparty/quadwild_windows/config/prep_config/{config_file}"
         ),
         os.path.normpath(
             f"./thirdparty/quadwild_windows/quad_from_patches {source_file_second_stage} {target_quad_count} thirdparty/quadwild_windows/config/main_config/flow.txt"
+        ),
+        os.path.normpath(
+            f"./thirdparty/bin/int_tri {source_file}  --noGUI --refineDelaunay"
         ),
     ]
     with Pool(os.cpu_count()) as p:
