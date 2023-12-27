@@ -330,7 +330,7 @@ def generate_mesh_data(idx, idx_to_file_idx, files, folder_path, max_faces_allow
 def train_autoencoder(run, dataset, autoencoder):
     trainer = MeshAutoencoderTrainer(
         autoencoder,
-        num_train_steps=run.autoencoder_train,
+        num_train_steps=run.config.autoencoder_train,
         dataset=dataset,
         batch_size=run.config.batch_size,
         grad_accum_every=run.config.grad_accum_every,
@@ -361,7 +361,7 @@ def train_transformer(autoencoder, run, dataset, device, seq_len):
 
     transformer_trainer = MeshTransformerTrainer(
         transformer,
-        num_train_steps=run.transformer_train,
+        num_train_steps=run.config.transformer_train,
         dataset=dataset,
         batch_size=wandb.config.batch_size,
         grad_accum_every=wandb.config.grad_accum_every,
