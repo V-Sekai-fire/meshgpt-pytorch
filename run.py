@@ -54,14 +54,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--autoencoder_train",
         type=int,
-        default=1200,
-        help="Number of training steps for the autoencoder. Default is 1200.",
+        default=6000,
+        help="Number of training steps for the autoencoder. Default is 6000.",
     )
     parser.add_argument(
         "--transformer_train",
         type=int,
-        default=600,
-        help="Number of training steps for the transformer. Default is 600.",
+        default=6000,
+        help="Number of training steps for the transformer. Default is 6000.",
     )
     parser.add_argument(
         "--batch_size",
