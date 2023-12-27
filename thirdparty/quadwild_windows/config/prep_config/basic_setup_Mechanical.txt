@@ -1,0 +1,4 @@
+do_remesh 0
+sharp_feature_thr 35
+alpha 0.01
+scaleFact 1
