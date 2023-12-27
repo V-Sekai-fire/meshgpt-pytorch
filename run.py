@@ -207,12 +207,12 @@ if __name__ == "__main__":
                         help="Learning rate for the autoencoder. Default is 0.4.")
     parser.add_argument("--transformer_learning_rate", type=float, default=0.2, 
                         help="Learning rate for the transformer. Default is 0.2.")
-    parser.add_argument("--autoencoder_train", type=int, default=1200, 
+    parser.add_argument("--autoencoder_train", type=int, default=600, 
                         help="Number of training steps for the autoencoder. Default is 1200.")
     parser.add_argument("--transformer_train", type=int, default=600, 
                         help="Number of training steps for the transformer. Default is 600.")
-    parser.add_argument("--batch_size", type=int, default=1, 
-                        help="Batch size for training. Default is 1.")
+    parser.add_argument("--batch_size", type=int, default=2, 
+                        help="Batch size for training. Default is 2.")
     parser.add_argument("--grad_accum_every", type=int, default=2, 
                         help="Gradient accumulation steps. Default is 2.")
     parser.add_argument("--checkpoint_every", type=int, default=20, 

@@ -341,7 +341,7 @@ class MeshDataset(Dataset):
     
         return (
             torch.from_numpy(np.array(final_vertices, dtype=np.float32)),
-            base_mesh[1],
+            torch.from_numpy(np.array(base_mesh[1], dtype=np.int64)),
         )
     
 
