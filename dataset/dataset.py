@@ -336,8 +336,8 @@ class MeshDataset(Dataset):
             centroids.append(centroid)
 
         # Use K-means clustering to find the furthest away points
-        kmeans = KMeans(n_clusters=num_chunk, default_n_init=auto)
-        kmeans.fit(centroids)
+        kmeans = KMeans(n_clusters=num_chunk)
+        kmeans.fit(centroids, default_n_init="auto")
         furthest_points = kmeans.cluster_centers_
 
         return furthest_points
