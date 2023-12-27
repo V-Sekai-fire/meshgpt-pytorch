@@ -18,6 +18,7 @@ from scipy.spatial import KDTree
 from run import load_and_process_files, generate_mesh_data, convert_to_glb
 from meshgpt_pytorch.data import MeshDataset
 
+
 class TestMeshDataset(unittest.TestCase):
     def setUp(self):
         self.augments = 3
@@ -36,7 +37,9 @@ class TestMeshDataset(unittest.TestCase):
         )
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         data = [
-            generate_mesh_data(idx, idx_to_file_idx, files, folder_path, max_faces_allowed)
+            generate_mesh_data(
+                idx, idx_to_file_idx, files, folder_path, max_faces_allowed
+            )
             for idx in range(len(idx_to_file_idx))
         ]
         dataset = MeshDataset(data)
