@@ -16,7 +16,7 @@ from sklearn.cluster import KMeans
 import unittest
 from scipy.spatial import KDTree
 from meshgpt_pytorch.data import MeshDataset
-from mesh_util import generate_mesh_data, process_mesh_data
+from mesh_utils import generate_mesh_data, process_mesh_data, load_and_process_files
 
 
 if __name__ == "__main__":
@@ -153,46 +153,46 @@ if __name__ == "__main__":
     )
 
     folder_path = args.dataset_directory
-    files = os.listdir(folder_path)
     supported_formats = (".glb", ".gltf")
-    files = [
-        file
-        for file in os.listdir(folder_path)
-        if os.path.splitext(file)[1] in supported_formats
-    ]
-    files = sorted(files)
-    idx_to_file_idx = load_and_process_files(
-        folder_path, supported_formats, max_faces_allowed
+    files = sorted(
+        [
+            file
+            for file in os.listdir(folder_path)
+            if os.path.splitext(file)[1] in supported_formats
+        ]
     )
 
-    if args.load_dataset:
-        dataset = MeshDataset.load("mesh_dataset.npz")
-    else:
-        data = [
-            generate_mesh_data(
-                idx, idx_to_file_idx, files, folder_path, max_faces_allowed
-            )
-            for idx in range(len(idx_to_file_idx))
-        ]
-        dataset = MeshDataset(data)
+    idx_to_file_idx = load_and_process_files(
+        folder_path, supported_formats, args.max_faces_allowed
+    )
+
+    dataset = (
+        MeshDataset.load("mesh_dataset.npz")
+        if args.load_dataset
+        else MeshDataset(
+            [
+                generate_mesh_data(
+                    idx, idx_to_file_idx, files, folder_path, args.max_faces_allowed
+                )
+                for idx in range(len(idx_to_file_idx))
+            ]
+        )
+    )
+    if not args.load_dataset:
         dataset.save("mesh_dataset.npz")
 
-    seq_len = max_faces_allowed * 3 * run.config.num_quantizers
+    seq_len = args.max_faces_allowed * 3 * run.config.num_quantizers
+
     if not args.inference_only:
+        autoencoder = MeshAutoencoder(
+            num_quantizers=run.config.num_quantizers,
+            num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
+        ).to(device)
         if args.autoencoder_path:
-            autoencoder = MeshAutoencoder(
-                num_quantizers=run.config.num_quantizers,
-                num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
-            ).to(device)
             autoencoder.init_and_load(run.config.autoencoder_path, strict=False)
-            if args.continue_train:
-                train_autoencoder(run, dataset, autoencoder)
-        else:
-            autoencoder = MeshAutoencoder(
-                num_quantizers=run.config.num_quantizers,
-                num_discrete_coors=run.config.autoencoder["num_discrete_coors"],
-            ).to(device)
+        if args.continue_train or not args.autoencoder_path:
             train_autoencoder(run, dataset, autoencoder)
+
         transformer = None
         if args.transformer_path:
             print(f"Sequence length: {seq_len}")
@@ -203,7 +203,7 @@ if __name__ == "__main__":
                 condition_on_text=True,
             ).to(device)
             transformer.load(run.config.transformer_path)
-        else:
+        elif not args.transformer_path:
             transformer = train_transformer(autoencoder, run, dataset, device, seq_len)
     else:
         if args.autoencoder_path and args.transformer_path:
