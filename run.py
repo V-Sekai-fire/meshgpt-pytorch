@@ -91,8 +91,8 @@ def compare_faces(face_a, face_b, vertices):
     return 0
 
 
-def load_and_process_scene(file_idx, files, folder_path):
-    max_faces = get_max_face_count(files, folder_path)
+def load_and_process_scene(file_idx, files, folder_path, max_face_count):
+    max_faces = get_max_face_count(files, folder_path, max_face_count)
 
     file_path = os.path.join(folder_path, files[file_idx])
     _, file_extension = os.path.splitext(file_path)
@@ -353,7 +353,7 @@ def generate_mesh_data(idx, idx_to_file_idx, files, folder_path, max_faces_allow
 
     kdtree = KDTree(vertices_np)
     selected_faces = extract_mesh_with_max_number_of_faces(
-        kdtree, centroid, vertices_np, all_faces, get_max_face_count(files, folder_path)
+        kdtree, centroid, vertices_np, all_faces, get_max_face_count(files, folder_path, max_faces_allowed)
     )
 
     new_vertices, new_faces = create_new_vertices_and_faces(
@@ -375,14 +375,6 @@ def generate_mesh_data(idx, idx_to_file_idx, files, folder_path, max_faces_allow
 
 
 def main(args):
-    folder_path = args.dataset_directory
-    files = os.listdir(folder_path)
-    supported_formats = (".glb", ".gltf")
-    files = [file for file in os.listdir(folder_path) if os.path.splitext(file)[1] in supported_formats]
-    files = sorted(files)
-    max_faces_allowed = 100
-    idx_to_file_idx = load_and_process_files(folder_path, supported_formats, max_faces_allowed)
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     dataset_directory = args.dataset_directory
@@ -413,18 +405,26 @@ def main(args):
         },
     )
 
+    folder_path = args.dataset_directory
+    files = os.listdir(folder_path)
+    supported_formats = (".glb", ".gltf")
+    files = [file for file in os.listdir(folder_path) if os.path.splitext(file)[1] in supported_formats]
+    files = sorted(files)
+    max_faces_allowed = 100
+    idx_to_file_idx = load_and_process_files(folder_path, supported_formats, max_faces_allowed)
+
     if args.load_dataset:
         dataset = MeshDataset.load('mesh_dataset.npz')
     else:
         data = [
-            generate_mesh_data(idx, idx_to_file_idx, files, folder_path)
+            generate_mesh_data(idx, idx_to_file_idx, files, folder_path, max_faces_allowed)
             for idx in range(len(idx_to_file_idx))
         ]
         dataset = MeshDataset(data)
         dataset.save('mesh_dataset.npz')
     dataset.generate_face_edges()
 
-    seq_len = get_max_face_count(files, folder_path) * 3 * run.config.num_quantizers
+    seq_len = get_max_face_count(files, folder_path, max_faces_allowed) * 3 * run.config.num_quantizers
     if seq_len < 8196:
         seq_len = 8196
     if not args.inference_only:
@@ -595,8 +595,8 @@ class TestMeshDataset(unittest.TestCase):
         supported_formats = (".glb", ".gltf")
         files = [file for file in os.listdir(folder_path) if os.path.splitext(file)[1] in supported_formats]
         files = sorted(files)
-        idx_to_file_idx = load_and_process_files(folder_path, supported_formats)
         max_faces_allowed = 100
+        idx_to_file_idx = load_and_process_files(folder_path, supported_formats, max_faces_allowed)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         dataset_directory = args.dataset_directory
