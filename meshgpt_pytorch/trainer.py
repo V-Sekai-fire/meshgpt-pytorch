@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+from tqdm import tqdm
 from pathlib import Path
 from functools import partial
 from packaging import version
@@ -33,6 +35,8 @@ from meshgpt_pytorch.meshgpt_pytorch import (
     MeshAutoencoder,
     MeshTransformer
 )
+
+import wandb
 
 # constants
 
@@ -239,7 +243,7 @@ class MeshAutoencoderTrainer(Module):
         elif isinstance(data, dict):
             forward_kwargs = data
 
-        maybe_del(forward_kwargs, 'texts', 'text_embeds')
+        maybe_del(forward_kwargs, 'text', 'text_embeds')
         return forward_kwargs
 
     def forward(self):
@@ -257,6 +261,8 @@ class MeshAutoencoderTrainer(Module):
 
                 forward_kwargs = self.next_data_to_forward_kwargs(dl_iter)
 
+                maybe_del(forward_kwargs, 'text', 'text_embeds')
+        
                 with self.accelerator.autocast(), maybe_no_sync():
 
                     total_loss, (recon_loss, commit_loss) = self.model(
@@ -279,8 +285,6 @@ class MeshAutoencoderTrainer(Module):
 
             step += 1
             self.step.add_(1)
-
-            self.wait()
 
             if self.is_main:
                 self.ema_model.update()

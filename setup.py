@@ -35,6 +35,10 @@ setup(
     'tqdm',
     'vector-quantize-pytorch>=1.12.0',
     'x-transformers>=1.26.0',
+    'tqdm',
+    'trimesh',
+    'pymesh',
+    "rtree",
   ],
   classifiers=[
     'Development Status :: 4 - Beta',

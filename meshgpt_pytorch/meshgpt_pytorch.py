@@ -35,7 +35,6 @@ from vector_quantize_pytorch import (
     ResidualLFQ
 )
 
-from meshgpt_pytorch.data import derive_face_edges_from_faces
 from meshgpt_pytorch.version import __version__
 
 from classifier_free_guidance_pytorch import (
@@ -323,7 +322,7 @@ class GateLoopBlock(Module):
         self.gateloops = ModuleList([])
 
         for _ in range(depth):
-            gateloop = SimpleGateLoopLayer(dim = dim, use_heinsen = use_heinsen)
+            gateloop = SimpleGateLoopLayer(dim = dim)
             self.gateloops.append(gateloop)
 
     def forward(
