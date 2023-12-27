@@ -310,7 +310,7 @@ class MeshDataset(Dataset):
         all_faces, all_vertices, augment_idx = self.load_and_process_scene(idx)
             
         all_vertices_np = np.array(all_vertices)
-        centroids = generate_centroids(all_vertices_np, self.num_centroids)
+        centroids = self.generate_centroids(all_vertices_np, self.num_centroids)
         
         vertices_np = np.array(all_vertices)
         faces_np = np.array(all_faces)
