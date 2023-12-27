@@ -211,16 +211,11 @@ def generate_face_centroids(all_faces, all_vertices, num_chunk):
         centroid = np.mean(face_vertices, axis=0)
         centroids.append(centroid)
 
-    corner_point = min(centroids, key=lambda x: sum(x))
-    furthest_points = [corner_point]
+    kmeans = KMeans(n_clusters=num_chunk, n_init="auto")
+    kmeans.fit(centroids)
+    furthest_points = kmeans.cluster_centers_
 
-    for _ in range(num_chunk - 1):
-        distances = np.array([np.linalg.norm(np.array(point) - np.array(furthest_points), axis=1) for point in centroids])
-        min_distances = np.min(distances, axis=0)
-        furthest_point = centroids[np.argmax(min_distances)]
-        furthest_points.append(furthest_point)
-
-    return np.array(furthest_points)
+    return furthest_points
 
 
 def extract_mesh_with_max_number_of_faces(
@@ -386,7 +381,7 @@ def main(args):
     supported_formats = (".glb", ".gltf")
     files = [file for file in os.listdir(folder_path) if os.path.splitext(file)[1] in supported_formats]
     files = sorted(files)
-    max_faces_allowed = 100
+    max_faces_allowed = 1365
     idx_to_file_idx = load_and_process_files(folder_path, supported_formats, max_faces_allowed)
 
     if args.load_dataset:
@@ -571,7 +566,7 @@ class TestMeshDataset(unittest.TestCase):
         supported_formats = (".glb", ".gltf")
         files = [file for file in os.listdir(folder_path) if os.path.splitext(file)[1] in supported_formats]
         files = sorted(files)
-        max_faces_allowed = 100
+        max_faces_allowed = 1365
         idx_to_file_idx = load_and_process_files(folder_path, supported_formats, max_faces_allowed)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         data = [
