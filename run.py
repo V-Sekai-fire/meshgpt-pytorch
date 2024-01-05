@@ -122,7 +122,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--max_faces_allowed",
         type=int,
-        default=100,
+        default=2345,
         help="Maximum number of faces for the transformer. Default is 100.",
     )
     args = parser.parse_args()
