@@ -545,8 +545,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--num_discrete_coors",
         type=int,
-        default=1024,
-        help="Number of discrete coordinates. Default is 1024.",
+        default=128,
+        help="Number of discrete coordinates. Default is 128.",
     )
     parser.add_argument(
         "--inference_only",
