@@ -106,6 +106,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--text",
         type=str,
+        default="object",
         help="Text to generate meshes for.",
     )
     parser.add_argument(
