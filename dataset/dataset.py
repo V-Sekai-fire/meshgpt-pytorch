@@ -66,7 +66,7 @@ class MeshDataset(Dataset):
 
     def __init__(self, data):
         self.data = data
-        print(f"[MeshDataset] Created from {len(self.data)} entrys")
+        print(f"[MeshDataset] Created from {len(self.data)} entries")
 
     def __len__(self):
         return len(self.data)
@@ -77,7 +77,7 @@ class MeshDataset(Dataset):
 
     def save(self, path):
         np.savez_compressed(path, self.data, allow_pickle=True)
-        print(f"[MeshDataset] Saved {len(self.data)} entrys at {path}")
+        print(f"[MeshDataset] Saved {len(self.data)} entries at {path}")
 
     @classmethod
     def load(cls, path):
@@ -85,7 +85,7 @@ class MeshDataset(Dataset):
         data = []
         for item in loaded_data["arr_0"]:
             data.append(item)
-        print(f"[MeshDataset] Loaded {len(data)} entrys")
+        print(f"[MeshDataset] Loaded {len(data)} entries")
         return cls(data)
 
     def generate_face_edges(self):
@@ -95,7 +95,7 @@ class MeshDataset(Dataset):
 
         desired_order = ["vertices", "faces", "face_edges", "texts"]
         self.data = [{key: d[key] for key in desired_order} for d in self.data]
-        print(f"[MeshDataset] Generated face_edges for {len(self.data)} entrys")
+        print(f"[MeshDataset] Generated face_edges for {len(self.data)} entries")
 
     def generate_codes(self, autoencoder: MeshAutoencoder):
         for i in range(0, len(self.data)):
@@ -108,7 +108,7 @@ class MeshDataset(Dataset):
             )
             item["codes"] = codes
 
-        print(f"[MeshDataset] Generated codes for {len(self.data)} entrys")
+        print(f"[MeshDataset] Generated codes for {len(self.data)} entries")
 
     def embed_texts(self, transformer: MeshTransformer):
         unique_texts = set(item["texts"] for item in self.data)
