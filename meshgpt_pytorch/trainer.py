@@ -32,8 +32,11 @@ from meshgpt_pytorch.data import custom_collate
 from meshgpt_pytorch.version import __version__
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from meshgpt_pytorch.meshgpt_pytorch import (
+from meshgpt_pytorch.meshgpt_pytorch_autoencoder import (
     MeshAutoencoder,
+)
+
+from meshgpt_pytorch.meshgpt_pytorch_mesh_transformer import (
     MeshTransformer
 )
 

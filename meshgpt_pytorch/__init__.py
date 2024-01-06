@@ -1,6 +1,8 @@
-from meshgpt_pytorch.meshgpt_pytorch import (
+from meshgpt_pytorch.meshgpt_pytorch_autoencoder import (
     MeshAutoencoder,
-    MeshDiscretizer,
+)
+
+from meshgpt_pytorch.meshgpt_pytorch_mesh_transformer import (
     MeshTransformer
 )
 
